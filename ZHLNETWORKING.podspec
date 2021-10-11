@@ -7,7 +7,7 @@
 #
 
 Pod::Spec.new do |s|
-  s.name             = 'ZLNetworking'
+  s.name             = 'ZHLNETWORKING'
   s.version          = '0.0.1'
   s.summary          = 'A short description of ZLNetworking.'
 

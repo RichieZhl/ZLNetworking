@@ -67,7 +67,7 @@
 		9575693CEB79DB69AC477579 /* Pods-ZLNetworking_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZLNetworking_Tests.release.xcconfig"; path = "Target Support Files/Pods-ZLNetworking_Tests/Pods-ZLNetworking_Tests.release.xcconfig"; sourceTree = "<group>"; };
 		CC03177739F02DCFED18B4CD /* Pods_ZLNetworking_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ZLNetworking_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC91BAFAAA6653000A8EF110 /* Pods_ZLNetworking_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ZLNetworking_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		E713DCA0A11A04EA8415D376 /* ZLNetworking.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = ZLNetworking.podspec; path = ../ZLNetworking.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
+		E713DCA0A11A04EA8415D376 /* ZHLNETWORKING.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = ZHLNETWORKING.podspec; path = ../ZHLNETWORKING.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		F9838BF3C372AFFD4D5ACE0F /* Pods-ZLNetworking_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZLNetworking_Tests.debug.xcconfig"; path = "Target Support Files/Pods-ZLNetworking_Tests/Pods-ZLNetworking_Tests.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -192,7 +192,7 @@
 		60FF7A9C1954A5C5007DD14C /* Podspec Metadata */ = {
 			isa = PBXGroup;
 			children = (
-				E713DCA0A11A04EA8415D376 /* ZLNetworking.podspec */,
+				E713DCA0A11A04EA8415D376 /* ZHLNETWORKING.podspec */,
 				42685FCBC36274CE9DF7D52D /* README.md */,
 				946BB1639483D3B63D6885DB /* LICENSE */,
 			);
