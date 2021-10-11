@@ -10,6 +10,7 @@
 #import "XMLDictionary.h"
 #import <sys/sysctl.h>
 #import <CoreServices/CoreServices.h>
+#import <CommonCrypto/CommonDigest.h>
 
 static inline unsigned int countOfCores(void) {
     unsigned int ncpu;
@@ -77,6 +78,19 @@ static inline NSString * ZLContentTypeForPathExtension(NSString *extension) {
     } else {
         return contentType;
     }
+}
+
+NSString *ZLSha256HashFor(NSString *input) {
+    const char *str = [input UTF8String];
+    unsigned char result[CC_SHA256_DIGEST_LENGTH + 1];
+    CC_SHA256(str, (CC_LONG)strlen(str), result);
+    
+    NSMutableString *ret = [NSMutableString stringWithCapacity:CC_SHA256_DIGEST_LENGTH * 2];
+    for (int i = 0; i < CC_SHA256_DIGEST_LENGTH; i++) {
+        [ret appendFormat:@"%02x", result[i]];
+    }
+
+    return ret;
 }
 
 static id ZLParseResponseBody(ZLResponseBodyType type, NSData *data) {
@@ -250,6 +264,199 @@ static id ZLParseResponseBody(ZLResponseBodyType type, NSData *data) {
 
 @end
 
+@interface ZLDownloadOperation : NSOperation <NSURLSessionDataDelegate> {
+    BOOL _isCancelled;
+    BOOL _isExecuting;
+    BOOL _isFinished;
+    unsigned long contentLength;
+    unsigned long receivedLength;
+}
+
+@property (nonatomic, strong) NSMutableArray<NSURL *> *mainDownloadItems;
+
+@property (nonatomic, strong) NSURLSession *urlSession;
+
+@property (nonatomic, strong) NSMutableURLRequest *urlRequest;
+
+@property (nonatomic, copy) NSDictionary<NSString *, NSString *> *headers;
+
+@property (nonatomic, strong) NSURLResponse *response;
+
+@property (nonatomic, copy) NSString *filePath;
+
+@property (nonatomic, strong) NSURL *destinationURL;
+
+@property (nonatomic, strong) NSFileHandle *fileHandle;
+
+@property (nonatomic, copy) void (^downloadProgressBlock)(float downloadProgress);
+
+@property (nonatomic, copy) void (^completionHandler)(NSURLResponse *response, NSURL *filePath, NSError *error);
+
+@end
+
+@implementation ZLDownloadOperation
+
+- (BOOL)isCancelled {
+    return _isCancelled;
+}
+
+- (BOOL)isFinished {
+    return _isFinished;
+}
+
+- (BOOL)isExecuting {
+    return _isExecuting;
+}
+
+- (void)cancel {
+    [super cancel];
+    
+    [self willChangeValueForKey:@"cancelled"];
+    _isCancelled = YES;
+    [self didChangeValueForKey:@"cancelled"];
+}
+
+- (void)main {
+    if (self.isCancelled) {
+        [self handleCancelAction];
+        return;
+    }
+    
+    NSOperationQueue *queue = [[NSOperationQueue alloc] init];
+    queue.maxConcurrentOperationCount = 1;
+        
+    NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+    configuration.HTTPShouldSetCookies = YES;
+    configuration.HTTPShouldUsePipelining = NO;
+    
+    configuration.timeoutIntervalForRequest = 3600;
+    configuration.allowsCellularAccess = YES;
+    
+    self.urlRequest.timeoutInterval = 3600;
+    
+    self.urlSession = [NSURLSession sessionWithConfiguration:configuration delegate:self delegateQueue:queue];
+    
+    if (self.headers != nil) {
+        for (NSString *headerField in self.headers.keyEnumerator) {
+            [self.urlRequest setValue:self.headers[headerField] forHTTPHeaderField:headerField];
+        }
+    }
+    
+    NSString *downloadTemp = [[ZLURLSessionManager shared].workspaceDirURLString stringByAppendingPathComponent:@"temp"];
+    NSString *fileName = ZLSha256HashFor(self.urlRequest.URL.absoluteString);
+    self.filePath = [downloadTemp stringByAppendingPathComponent:fileName];
+    
+    BOOL isDir = NO;
+    if ([[NSFileManager defaultManager] fileExistsAtPath:self.filePath isDirectory:&isDir] && !isDir) {
+        NSDictionary *fileDic = [[NSFileManager defaultManager] attributesOfItemAtPath:self.filePath error:nil];//获取文件的属性
+        unsigned long size = [[fileDic objectForKey:NSFileSize] longLongValue];
+        NSString *range = [NSString stringWithFormat:@"bytes=%ld-", size];
+        [self.urlRequest setValue:range forHTTPHeaderField:@"Range"];
+        receivedLength = size;
+    } else {
+        [[NSFileManager defaultManager] createFileAtPath:self.filePath contents:[NSData data] attributes:nil];
+        receivedLength = 0;
+    }
+    
+    if (self.isCancelled) {
+        [self handleCancelAction];
+        return;
+    }
+    
+    NSURLSessionDataTask *task = [self.urlSession dataTaskWithRequest:self.urlRequest];
+    [task resume];
+    [self.urlSession finishTasksAndInvalidate];
+    
+    [self willChangeValueForKey:@"executing"];
+    _isExecuting = YES;
+    [self didChangeValueForKey:@"executing"];
+}
+
+- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
+                                 didReceiveResponse:(NSURLResponse *)response
+                                  completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler {
+    if (self.isCancelled) {
+        completionHandler(NSURLSessionResponseCancel);
+    } else {
+        self.response = response;
+        
+        if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
+            NSHTTPURLResponse *rp = (NSHTTPURLResponse *)response;
+            unsigned long remoteContentLength = (unsigned long)[rp.allHeaderFields[@"Content-Length"] longLongValue];
+            contentLength = remoteContentLength + receivedLength;
+            
+            self.fileHandle = [NSFileHandle fileHandleForWritingAtPath:self.filePath];
+            [self.fileHandle seekToEndOfFile];
+        }
+        
+        completionHandler(NSURLSessionResponseAllow);
+    }
+}
+
+- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
+    didReceiveData:(NSData *)data {
+    if (self.isCancelled) {
+        [dataTask cancel];
+        
+        [self willChangeValueForKey:@"cancelled"];
+        _isCancelled = YES;
+        [self didChangeValueForKey:@"cancelled"];
+        
+        return;
+    }
+    
+    [self.fileHandle writeData:data];
+    receivedLength += data.length;
+    
+    if (self.downloadProgressBlock) {
+        self.downloadProgressBlock(1.0 * receivedLength / contentLength);
+    }
+}
+
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
+didCompleteWithError:(nullable NSError *)error {
+    if (self.fileHandle != nil) {
+        [self.fileHandle closeFile];
+    }
+    
+    if (error) {
+        if (error.code == NSURLErrorCancelled) {
+            [self handleCancelAction];
+        }
+        
+        if (self.completionHandler) {
+            self.completionHandler(self.response, self.destinationURL, error);
+        }
+    } else {
+        if (receivedLength >= contentLength) {
+            NSError *error = nil;
+            [[NSFileManager defaultManager] moveItemAtURL:[NSURL fileURLWithPath:self.filePath] toURL:self.destinationURL error:&error];
+            
+            if (self.completionHandler) {
+                self.completionHandler(self.response, self.destinationURL, error);
+            }
+        } else {
+            if (self.completionHandler) {
+                self.completionHandler(self.response, self.destinationURL, [NSError errorWithDomain:@"FILE IO Error" code:NSURLErrorCannotMoveFile userInfo:nil]);
+            }
+        }
+    }
+    
+    [self willChangeValueForKey:@"executing"];
+    _isExecuting = NO;
+    [self didChangeValueForKey:@"executing"];
+    
+    [self willChangeValueForKey:@"finished"];
+    _isFinished = YES;
+    [self didChangeValueForKey:@"finished"];
+}
+
+- (void)handleCancelAction {
+//    NSLog(@"%s", __FUNCTION__);
+}
+
+@end
+
 @interface ZLURLSessionManager ()
 
 @property (nonatomic, strong) NSURLSessionConfiguration *configuration;
@@ -257,6 +464,10 @@ static id ZLParseResponseBody(ZLResponseBodyType type, NSData *data) {
 @property (nonatomic, strong) NSMutableDictionary<NSString *, NSURLSession *> *urlSessionCaches;
 
 @property (nonatomic, strong) NSOperationQueue *responseQueue;
+
+@property (nonatomic, strong) NSMutableArray<NSURL *> *downloadItems;
+
+@property (nonatomic, copy, readwrite) NSString *workspaceDirURLString;
 
 @end
 
@@ -279,6 +490,16 @@ static id ZLParseResponseBody(ZLResponseBodyType type, NSData *data) {
         _responseQueue = [[NSOperationQueue alloc] init];
         _responseQueue.maxConcurrentOperationCount = countOfCores() * 2;
         _reachablity = [ZLReachability reachabilityWithHostName:@"www.apple.com"];
+        _workspaceDirURLString = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject stringByAppendingPathComponent:@"ZHLNetworking"];
+        
+        NSString *downloadTemp = [_workspaceDirURLString stringByAppendingPathComponent:@"temp"];
+        
+        BOOL isDir = NO;
+        if (![[NSFileManager defaultManager] fileExistsAtPath:downloadTemp isDirectory:&isDir] || !isDir) {
+            if (![[NSFileManager defaultManager] createDirectoryAtPath:downloadTemp withIntermediateDirectories:YES attributes:nil error:nil]) {
+                NSLog(@"file system error");
+            }
+        }
     }
     return self;
 }
@@ -668,6 +889,25 @@ responseBodyType:(ZLResponseBodyType)responseBodyType
         }];
         [task resume];
     }];
+}
+
+- (void)downloadWithRequest:(NSURLRequest *)request
+                    headers:(NSDictionary <NSString *, NSString *> *)headers
+                destination:(NSURL *)destinationURL
+                   progress:(void (^)(float downloadProgress))downloadProgressBlock
+          completionHandler:(void (^)(NSURLResponse *response, NSURL *filePath, NSError *error))completionHandler {
+    if ([self.downloadItems containsObject:request.URL]) {
+        return;
+    }
+    
+    ZLDownloadOperation *operation = [[ZLDownloadOperation alloc] init];
+    operation.mainDownloadItems = self.downloadItems;
+    operation.urlRequest = request.mutableCopy;
+    operation.headers = headers;
+    operation.destinationURL = destinationURL;
+    operation.downloadProgressBlock = downloadProgressBlock;
+    operation.completionHandler = completionHandler;
+    [self.responseQueue addOperation:operation];
 }
 
 @end

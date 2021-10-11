@@ -46,14 +46,24 @@
 //
 //    }];
     
-    [[ZLURLSessionManager shared] POST:@"http://172.19.3.65:8080" parameters:nil constructingBodyWithBlock:^(ZLMultipartFormData *formData) {
-        NSURL *url = [NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"测试中文" ofType:@"jpeg"]];
-        [formData appendPartWithFileURL:url name:@"file"];
-    } headers:nil responseBodyType:ZLResponseBodyTypeJson success:^(NSHTTPURLResponse *urlResponse, id responseObject) {
-        NSLog(@"%@", urlResponse);
-        NSLog(@"%@", responseObject);
-    } failure:^(NSError *error) {
-        
+//    [[ZLURLSessionManager shared] POST:@"http://172.19.3.65:8080" parameters:nil constructingBodyWithBlock:^(ZLMultipartFormData *formData) {
+//        NSURL *url = [NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"测试中文" ofType:@"jpeg"]];
+//        [formData appendPartWithFileURL:url name:@"file"];
+//    } headers:nil responseBodyType:ZLResponseBodyTypeJson success:^(NSHTTPURLResponse *urlResponse, id responseObject) {
+//        NSLog(@"%@", urlResponse);
+//        NSLog(@"%@", responseObject);
+//    } failure:^(NSError *error) {
+//
+//    }];
+    
+    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"https://qianmi-resources.oss-cn-hangzhou.aliyuncs.com/ares/app/sxxd_ios.ipa"]];
+    NSString *filePath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject stringByAppendingPathComponent:@"ZHLNetworking/1.ipa"];
+    NSURL *url = [NSURL fileURLWithPath:filePath];
+
+    [[ZLURLSessionManager shared] downloadWithRequest:request headers:nil destination:url progress:^(float progress) {
+        NSLog(@"progress:%.2f", progress * 100);
+    } completionHandler:^(NSURLResponse *response, NSURL *filePath, NSError *error) {
+        NSLog(@"%@\n%@", response, filePath);
     }];
 }
 

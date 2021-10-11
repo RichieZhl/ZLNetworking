@@ -90,6 +90,9 @@ typedef NS_ENUM(NSInteger, ZLResponseBodyType) {
 
 @property (nonatomic, strong) ZLReachability *reachablity;
 
+/// 缓存目录
+@property (nonatomic, copy, readonly) NSString *workspaceDirURLString;
+
 + (instancetype)shared;
 
 - (instancetype)init NS_UNAVAILABLE;
@@ -168,5 +171,11 @@ constructingBodyWithBlock:(void (^)(ZLMultipartFormData *formData))block
 responseBodyType:(ZLResponseBodyType)responseBodyType
      success:(void (^)(NSHTTPURLResponse *urlResponse, id responseObject))success
      failure:(void (^)(NSError *error))failure;
+
+- (void)downloadWithRequest:(NSURLRequest *)request
+                    headers:(NSDictionary <NSString *, NSString *> *)headers
+                destination:(NSURL *)destinationURL
+                   progress:(void (^)(float downloadProgress))downloadProgressBlock
+          completionHandler:(void (^)(NSURLResponse *response, NSURL *filePath, NSError *error))completionHandler;
 
 @end
