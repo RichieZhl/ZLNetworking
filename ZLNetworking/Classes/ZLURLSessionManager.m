@@ -910,4 +910,27 @@ responseBodyType:(ZLResponseBodyType)responseBodyType
     [self.responseQueue addOperation:operation];
 }
 
+- (void)clearDiskCache {
+    NSString *downloadTemp = [[ZLURLSessionManager shared].workspaceDirURLString stringByAppendingPathComponent:@"temp"];
+    
+    [ZLURLSessionManager deleteDirPath:downloadTemp];
+    [[NSFileManager defaultManager] createDirectoryAtPath:downloadTemp withIntermediateDirectories:YES attributes:nil error:nil];
+}
+
++ (void)deleteDirPath:(NSString *)dirPath {
+    NSArray *contents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:dirPath error:NULL];
+    for (NSString *filename in contents) {
+        NSString *filePath = [dirPath stringByAppendingPathComponent:filename];
+        BOOL isDirectory = NO;
+        [[NSFileManager defaultManager] fileExistsAtPath:filePath isDirectory:&isDirectory];
+        if (isDirectory) {
+            [ZLURLSessionManager deleteDirPath:filePath];
+        } else {
+            [[NSFileManager defaultManager] removeItemAtPath:filePath error:NULL];
+        }
+    }
+    
+    [[NSFileManager defaultManager] removeItemAtPath:dirPath error:NULL];
+}
+
 @end

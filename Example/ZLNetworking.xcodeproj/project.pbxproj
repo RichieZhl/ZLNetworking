@@ -306,7 +306,7 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-ZLNetworking_Example/Pods-ZLNetworking_Example-frameworks.sh",
-				"${BUILT_PRODUCTS_DIR}/ZLNetworking/ZLNetworking.framework",
+				"${BUILT_PRODUCTS_DIR}/ZHLNETWORKING/ZLNetworking.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (

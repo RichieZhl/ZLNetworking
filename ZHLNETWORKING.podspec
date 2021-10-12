@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'ZHLNETWORKING'
-  s.version          = '0.0.2'
+  s.version          = '0.0.3'
   s.summary          = 'A short description of ZLNetworking.'
 
 # This description is used to generate tags and improve search results.
@@ -30,6 +30,7 @@ TODO: Add long description of the pod here.
 
   s.ios.deployment_target = '9.0'
 
+  s.header_dir = 'ZLNetworking'
   s.source_files = 'ZLNetworking/Classes/**/*'
   s.project_header_files = 'ZLNetworking/Classes/XMLDictionary.h'
   

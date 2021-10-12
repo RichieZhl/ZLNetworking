@@ -178,4 +178,6 @@ responseBodyType:(ZLResponseBodyType)responseBodyType
                    progress:(void (^)(float downloadProgress))downloadProgressBlock
           completionHandler:(void (^)(NSURLResponse *response, NSURL *filePath, NSError *error))completionHandler;
 
+- (void)clearDiskCache;
+
 @end
