@@ -22,6 +22,8 @@ typedef NS_ENUM(NSInteger, ZLResponseBodyType) {
     ZLResponseBodyTypeXml
 };
 
+extern NSString *ZLSha256HashFor(NSString *input);
+
 
 @interface ZLMultipartFormData : NSObject
 
@@ -179,5 +181,7 @@ responseBodyType:(ZLResponseBodyType)responseBodyType
           completionHandler:(void (^)(NSURLResponse *response, NSURL *filePath, NSError *error))completionHandler;
 
 - (void)clearDiskCache;
+
+- (void)cancelDownloadForURL:(NSURL *)url;
 
 @end

@@ -272,7 +272,7 @@ static id ZLParseResponseBody(ZLResponseBodyType type, NSData *data) {
     unsigned long receivedLength;
 }
 
-@property (nonatomic, strong) NSMutableArray<NSURL *> *mainDownloadItems;
+@property (nonatomic, strong) NSMutableDictionary<NSURL *, ZLDownloadOperation *> *mainDownloadItems;
 
 @property (nonatomic, strong) NSURLSession *urlSession;
 
@@ -347,6 +347,12 @@ static id ZLParseResponseBody(ZLResponseBodyType type, NSData *data) {
     self.filePath = [downloadTemp stringByAppendingPathComponent:fileName];
     
     BOOL isDir = NO;
+    if (![[NSFileManager defaultManager] fileExistsAtPath:downloadTemp isDirectory:&isDir] || !isDir) {
+        if (![[NSFileManager defaultManager] createDirectoryAtPath:downloadTemp withIntermediateDirectories:YES attributes:nil error:nil]) {
+            NSLog(@"file system error");
+        }
+    }
+    
     if ([[NSFileManager defaultManager] fileExistsAtPath:self.filePath isDirectory:&isDir] && !isDir) {
         NSDictionary *fileDic = [[NSFileManager defaultManager] attributesOfItemAtPath:self.filePath error:nil];//获取文件的属性
         unsigned long size = [[fileDic objectForKey:NSFileSize] longLongValue];
@@ -442,6 +448,8 @@ didCompleteWithError:(nullable NSError *)error {
         }
     }
     
+    [self.mainDownloadItems removeObjectForKey:self.urlRequest.URL];
+    
     [self willChangeValueForKey:@"executing"];
     _isExecuting = NO;
     [self didChangeValueForKey:@"executing"];
@@ -465,7 +473,7 @@ didCompleteWithError:(nullable NSError *)error {
 
 @property (nonatomic, strong) NSOperationQueue *responseQueue;
 
-@property (nonatomic, strong) NSMutableArray<NSURL *> *downloadItems;
+@property (nonatomic, strong) NSMutableDictionary<NSURL *, ZLDownloadOperation *> *downloadItems;
 
 @property (nonatomic, copy, readwrite) NSString *workspaceDirURLString;
 
@@ -490,7 +498,7 @@ didCompleteWithError:(nullable NSError *)error {
         _responseQueue = [[NSOperationQueue alloc] init];
         _responseQueue.maxConcurrentOperationCount = countOfCores() * 2;
         _reachablity = [ZLReachability reachabilityWithHostName:@"www.apple.com"];
-        _workspaceDirURLString = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject stringByAppendingPathComponent:@"ZHLNetworking"];
+        _workspaceDirURLString = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject stringByAppendingPathComponent:@"ZHLNetworking"];
         
         NSString *downloadTemp = [_workspaceDirURLString stringByAppendingPathComponent:@"temp"];
         
@@ -896,7 +904,8 @@ responseBodyType:(ZLResponseBodyType)responseBodyType
                 destination:(NSURL *)destinationURL
                    progress:(void (^)(float downloadProgress))downloadProgressBlock
           completionHandler:(void (^)(NSURLResponse *response, NSURL *filePath, NSError *error))completionHandler {
-    if ([self.downloadItems containsObject:request.URL]) {
+    ZLDownloadOperation *_operation = [self.downloadItems objectForKey:request.URL];
+    if (_operation != nil) {
         return;
     }
     
@@ -931,6 +940,14 @@ responseBodyType:(ZLResponseBodyType)responseBodyType
     }
     
     [[NSFileManager defaultManager] removeItemAtPath:dirPath error:NULL];
+}
+
+- (void)cancelDownloadForURL:(NSURL *)url {
+    ZLDownloadOperation *_operation = [self.downloadItems objectForKey:url];
+    if (_operation == nil) {
+        return;
+    }
+    [_operation cancel];
 }
 
 @end

@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		0A8819C7F3004283A0BCB1E9 /* Pods_ZLNetworking_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC03177739F02DCFED18B4CD /* Pods_ZLNetworking_Example.framework */; };
 		430FC69027118C6900C33511 /* 测试中文.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 430FC68F27118C6900C33511 /* 测试中文.jpeg */; };
+		4388382127152894001EAFD2 /* p_template_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 4388382027152893001EAFD2 /* p_template_icon.png */; };
+		43883828271576E1001EAFD2 /* locate.png in Resources */ = {isa = PBXBuildFile; fileRef = 43883827271576E1001EAFD2 /* locate.png */; };
+		4388382A27157980001EAFD2 /* sohucs.gif in Resources */ = {isa = PBXBuildFile; fileRef = 4388382927157980001EAFD2 /* sohucs.gif */; };
 		6003F58E195388D20070C39A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F58D195388D20070C39A /* Foundation.framework */; };
 		6003F590195388D20070C39A /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F58F195388D20070C39A /* CoreGraphics.framework */; };
 		6003F592195388D20070C39A /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F591195388D20070C39A /* UIKit.framework */; };
@@ -42,6 +45,9 @@
 		3F61C52A14BBB90C0637660A /* Pods-ZLNetworking_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZLNetworking_Example.release.xcconfig"; path = "Target Support Files/Pods-ZLNetworking_Example/Pods-ZLNetworking_Example.release.xcconfig"; sourceTree = "<group>"; };
 		42685FCBC36274CE9DF7D52D /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		430FC68F27118C6900C33511 /* 测试中文.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "测试中文.jpeg"; sourceTree = "<group>"; };
+		4388382027152893001EAFD2 /* p_template_icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = p_template_icon.png; sourceTree = "<group>"; };
+		43883827271576E1001EAFD2 /* locate.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = locate.png; sourceTree = "<group>"; };
+		4388382927157980001EAFD2 /* sohucs.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = sohucs.gif; sourceTree = "<group>"; };
 		6003F58A195388D20070C39A /* ZLNetworking_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ZLNetworking_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6003F58D195388D20070C39A /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		6003F58F195388D20070C39A /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -150,7 +156,10 @@
 				873B8AEA1B1F5CCA007FD442 /* Main.storyboard */,
 				6003F5A5195388D20070C39A /* ZLViewController.h */,
 				6003F5A6195388D20070C39A /* ZLViewController.m */,
+				4388382027152893001EAFD2 /* p_template_icon.png */,
 				430FC68F27118C6900C33511 /* 测试中文.jpeg */,
+				4388382927157980001EAFD2 /* sohucs.gif */,
+				43883827271576E1001EAFD2 /* locate.png */,
 				71719F9D1E33DC2100824A3D /* LaunchScreen.storyboard */,
 				6003F5A8195388D20070C39A /* Images.xcassets */,
 				6003F594195388D20070C39A /* Supporting Files */,
@@ -282,7 +291,10 @@
 			files = (
 				873B8AEB1B1F5CCA007FD442 /* Main.storyboard in Resources */,
 				71719F9F1E33DC2100824A3D /* LaunchScreen.storyboard in Resources */,
+				43883828271576E1001EAFD2 /* locate.png in Resources */,
+				4388382A27157980001EAFD2 /* sohucs.gif in Resources */,
 				430FC69027118C6900C33511 /* 测试中文.jpeg in Resources */,
+				4388382127152894001EAFD2 /* p_template_icon.png in Resources */,
 				6003F5A9195388D20070C39A /* Images.xcassets in Resources */,
 				6003F598195388D20070C39A /* InfoPlist.strings in Resources */,
 			);
@@ -453,7 +465,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -486,7 +498,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;

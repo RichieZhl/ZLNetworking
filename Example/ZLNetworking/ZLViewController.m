@@ -8,10 +8,13 @@
 
 #import "ZLViewController.h"
 #import <ZLNetworking/ZLURLSessionManager.h>
+#import <ZLNetworking/ZLNetImage.h>
 
 @interface ZLViewController ()
 
 @property (nonatomic, strong) NSOperationQueue *queue;
+
+@property (nonatomic, weak) IBOutlet UIImageView *imageView;
 
 @end
 
@@ -57,7 +60,7 @@
 //    }];
     
     NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"https://qianmi-resources.oss-cn-hangzhou.aliyuncs.com/ares/app/sxxd_ios.ipa"]];
-    NSString *filePath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject stringByAppendingPathComponent:@"ZHLNetworking/1.ipa"];
+    NSString *filePath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject stringByAppendingPathComponent:@"1.ipa"];
     NSURL *url = [NSURL fileURLWithPath:filePath];
 
     [[ZLURLSessionManager shared] downloadWithRequest:request headers:nil destination:url progress:^(float progress) {
@@ -65,6 +68,22 @@
     } completionHandler:^(NSURLResponse *response, NSURL *filePath, NSError *error) {
         NSLog(@"%@\n%@", response, filePath);
     }];
+    
+//    self.imageView.image = [UIImage zl_imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"locate" ofType:@"png"]];
+//    [self.imageView zl_setImageWithURL:[NSURL URLWithString:@"https://qianmi-resources.oss-cn-hangzhou.aliyuncs.com/60ed05864ceaef3ba3620ef9/IMAGE/04004116279755425641.jpg"] placeholderImage:[UIImage zl_imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"locate" ofType:@"png"]] progress:^(float progress) {
+//
+//    } completed:^(UIImage * _Nullable image, NSError * _Nullable error) {
+//
+//    }];
+    [self.imageView zl_setImageWithURL:[NSURL URLWithString:@"https://qianmi-resources.oss-cn-hangzhou.aliyuncs.com/60ed05864ceaef3ba3620ef9/IMAGE/04004116279755425641.jpg"]];
+    
+    NSData *data = [self.imageView.image zl_imageDataWithQuality:1];
+    [data writeToFile:@"/Users/lylaut/Desktop/zlnet.png" atomically:YES];
+    
+    ZLAnimatedImageView *imgView = [[ZLAnimatedImageView alloc] initWithFrame:CGRectMake(20, 240, 150, 150)];
+    NSData *gifData = [NSData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"sohucs.gif" ofType:nil]];
+    imgView.image = [UIImage zl_animatedImageWithData:gifData scale:1];
+    [self.view addSubview:imgView];
 }
 
 - (void)didReceiveMemoryWarning
