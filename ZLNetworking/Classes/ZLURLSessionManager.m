@@ -7,7 +7,7 @@
 //
 
 #import "ZLURLSessionManager.h"
-#import "XMLDictionary.h"
+#import "ZLXMLDictionary.h"
 #import <sys/sysctl.h>
 #import <CoreServices/CoreServices.h>
 #import <CommonCrypto/CommonDigest.h>
@@ -501,7 +501,7 @@ didCompleteWithError:(nullable NSError *)error {
         _responseQueue.maxConcurrentOperationCount = countOfCores();
         _downloadQueue = [[NSOperationQueue alloc] init];
         _downloadQueue.maxConcurrentOperationCount = _responseQueue.maxConcurrentOperationCount;
-        _reachablity = [ZLReachability reachabilityWithHostName:@"www.apple.com"];
+        _reachablity = [ZHLReachability reachabilityWithHostName:@"www.apple.com"];
         _workspaceDirURLString = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject stringByAppendingPathComponent:@"ZHLNetworking"];
         
         NSString *downloadTemp = [_workspaceDirURLString stringByAppendingPathComponent:@"temp"];

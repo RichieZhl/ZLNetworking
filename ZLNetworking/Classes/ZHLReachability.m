@@ -1,11 +1,11 @@
 //
-//  ZLReachability.m
+//  ZHLReachability.m
 //  QMCommon
 //
 //  Created by lylaut on 2021/3/4.
 //
 
-#import "ZLReachability.h"
+#import "ZHLReachability.h"
 #import <SystemConfiguration/SystemConfiguration.h>
 #import <netinet/in.h>
 
@@ -43,9 +43,9 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 {
 #pragma unused (target, flags)
     NSCAssert(info != NULL, @"info was NULL in ReachabilityCallback");
-    NSCAssert([(__bridge NSObject*) info isKindOfClass: [ZLReachability class]], @"info was wrong class in ReachabilityCallback");
+    NSCAssert([(__bridge NSObject*) info isKindOfClass: [ZHLReachability class]], @"info was wrong class in ReachabilityCallback");
     
-    ZLReachability* noteObject = (__bridge ZLReachability *)info;
+    ZHLReachability* noteObject = (__bridge ZHLReachability *)info;
     // Post a notification to notify the client that the network reachability changed.
     [[NSNotificationCenter defaultCenter] postNotificationName: kReachabilityChangedNotification object: noteObject];
 }
@@ -53,14 +53,14 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 
 #pragma mark - Reachability implementation
 
-@implementation ZLReachability
+@implementation ZHLReachability
 {
     SCNetworkReachabilityRef _reachabilityRef;
 }
 
 + (instancetype)reachabilityWithHostName:(NSString *)hostName
 {
-    ZLReachability* returnValue = NULL;
+    ZHLReachability* returnValue = NULL;
     SCNetworkReachabilityRef reachability = SCNetworkReachabilityCreateWithName(NULL, [hostName UTF8String]);
     if (reachability != NULL)
     {
@@ -81,7 +81,7 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 {
     SCNetworkReachabilityRef reachability = SCNetworkReachabilityCreateWithAddress(kCFAllocatorDefault, hostAddress);
     
-    ZLReachability* returnValue = NULL;
+    ZHLReachability* returnValue = NULL;
     
     if (reachability != NULL)
     {

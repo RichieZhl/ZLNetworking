@@ -1,5 +1,5 @@
 //
-//  ZLReachability.h
+//  ZHLReachability.h
 //  QMCommon
 //
 //  Created by lylaut on 2021/3/4.
@@ -24,7 +24,7 @@ typedef enum : NSInteger {
 extern NSString *kReachabilityChangedNotification;
 
 
-@interface ZLReachability : NSObject
+@interface ZHLReachability : NSObject
 
 /*!
  * Use to check the reachability of a given host name.

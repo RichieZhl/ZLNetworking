@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "ZLReachability.h"
+#import "ZHLReachability.h"
 
 typedef NS_ENUM(NSInteger, ZLRequestBodyType) {
     ZLRequestBodyTypeDefault = 0,
@@ -90,7 +90,7 @@ extern NSString *ZLSha256HashFor(NSString *input);
 /// 通用请求头，如鉴权
 @property (nonatomic, copy) NSDictionary *commonHeader;
 
-@property (nonatomic, strong) ZLReachability *reachablity;
+@property (nonatomic, strong) ZHLReachability *reachablity;
 
 /// 缓存目录
 @property (nonatomic, copy, readonly) NSString *workspaceDirURLString;

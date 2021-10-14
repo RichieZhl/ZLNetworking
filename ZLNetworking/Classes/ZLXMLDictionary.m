@@ -1,14 +1,14 @@
 //
-//  XMLDictionary.m
+//  ZLXMLDictionary.m
 //
 //  Version 1.4.1
 //
 //  Created by Nick Lockwood on 15/11/2010.
 //  Copyright 2010 Charcoal Design. All rights reserved.
 //
-//  Get the latest version of XMLDictionary from here:
+//  Get the latest version of ZLXMLDictionary from here:
 //
-//  https://github.com/nicklockwood/XMLDictionary
+//  https://github.com/nicklockwood/ZLXMLDictionary
 //
 //  This software is provided 'as-is', without any express or implied
 //  warranty.  In no event will the authors be held liable for any damages
@@ -29,7 +29,7 @@
 //  3. This notice may not be removed or altered from any source distribution.
 //
 
-#import "XMLDictionary.h"
+#import "ZLXMLDictionary.h"
 
 
 #pragma GCC diagnostic ignored "-Wobjc-missing-property-synthesis"
@@ -44,19 +44,19 @@
 #error This class requires automatic reference counting
 #endif
 
-static NSString *const XMLDictionaryAttributesKey   = @"__attributes";
-static NSString *const XMLDictionaryCommentsKey     = @"__comments";
-static NSString *const XMLDictionaryTextKey         = @"__text";
-static NSString *const XMLDictionaryNodeNameKey     = @"__name";
-static NSString *const XMLDictionaryAttributePrefix = @"_";
+static NSString *const ZLXMLDictionaryAttributesKey   = @"__attributes";
+static NSString *const ZLXMLDictionaryCommentsKey     = @"__comments";
+static NSString *const ZLXMLDictionaryTextKey         = @"__text";
+static NSString *const ZLXMLDictionaryNodeNameKey     = @"__name";
+static NSString *const ZLXMLDictionaryAttributePrefix = @"_";
 
-@interface NSString (XMLDictionary)
+@interface NSString (ZLXMLDictionary)
 
 @property (nonatomic, readonly, copy) NSString *XMLEncodedString;
 
 @end
 
-@implementation NSString (XMLDictionary)
+@implementation NSString (ZLXMLDictionary)
 
 - (NSString *)XMLEncodedString
 {
@@ -70,7 +70,7 @@ static NSString *const XMLDictionaryAttributePrefix = @"_";
 @end
 
 
-@interface XMLDictionaryParser () <NSXMLParserDelegate>
+@interface ZLXMLDictionaryParser () <NSXMLParserDelegate>
 
 @property (nonatomic, strong) NSMutableDictionary<NSString *, id> *root;
 @property (nonatomic, strong) NSMutableArray *stack;
@@ -79,15 +79,15 @@ static NSString *const XMLDictionaryAttributePrefix = @"_";
 @end
 
 
-@implementation XMLDictionaryParser
+@implementation ZLXMLDictionaryParser
 
-+ (XMLDictionaryParser *)sharedInstance
++ (ZLXMLDictionaryParser *)sharedInstance
 {
     static dispatch_once_t once;
-    static XMLDictionaryParser *sharedInstance;
+    static ZLXMLDictionaryParser *sharedInstance;
     dispatch_once(&once, ^{
         
-        sharedInstance = [[XMLDictionaryParser alloc] init];
+        sharedInstance = [[ZLXMLDictionaryParser alloc] init];
     });
     return sharedInstance;
 }
@@ -108,7 +108,7 @@ static NSString *const XMLDictionaryAttributePrefix = @"_";
 
 - (id)copyWithZone:(NSZone *)zone
 {
-    XMLDictionaryParser *copy = [[[self class] allocWithZone:zone] init];
+    ZLXMLDictionaryParser *copy = [[[self class] allocWithZone:zone] init];
     copy.collapseTextNodes = _collapseTextNodes;
     copy.stripEmptyNodes = _stripEmptyNodes;
     copy.trimWhiteSpace = _trimWhiteSpace;
@@ -193,18 +193,18 @@ static NSString *const XMLDictionaryAttributePrefix = @"_";
 	if (_text.length)
 	{
         NSMutableDictionary *top = _stack.lastObject;
-		id existing = top[XMLDictionaryTextKey];
+		id existing = top[ZLXMLDictionaryTextKey];
         if ([existing isKindOfClass:[NSArray class]])
         {
             [existing addObject:_text];
         }
         else if (existing)
         {
-            top[XMLDictionaryTextKey] = [@[existing, _text] mutableCopy];
+            top[ZLXMLDictionaryTextKey] = [@[existing, _text] mutableCopy];
         }
 		else
 		{
-			top[XMLDictionaryTextKey] = _text;
+			top[ZLXMLDictionaryTextKey] = _text;
 		}
 	}
 	_text = nil;
@@ -229,20 +229,20 @@ static NSString *const XMLDictionaryAttributePrefix = @"_";
 	NSMutableDictionary<NSString *, id> *node = [NSMutableDictionary dictionary];
 	switch (_nodeNameMode)
 	{
-        case XMLDictionaryNodeNameModeRootOnly:
+        case ZLXMLDictionaryNodeNameModeRootOnly:
         {
             if (!_root)
             {
-                node[XMLDictionaryNodeNameKey] = elementName;
+                node[ZLXMLDictionaryNodeNameKey] = elementName;
             }
             break;
         }
-        case XMLDictionaryNodeNameModeAlways:
+        case ZLXMLDictionaryNodeNameModeAlways:
         {
-            node[XMLDictionaryNodeNameKey] = elementName;
+            node[ZLXMLDictionaryNodeNameKey] = elementName;
             break;
         }
-        case XMLDictionaryNodeNameModeNever:
+        case ZLXMLDictionaryNodeNameModeNever:
         {
             break;
         }
@@ -252,25 +252,25 @@ static NSString *const XMLDictionaryAttributePrefix = @"_";
 	{
         switch (_attributesMode)
         {
-            case XMLDictionaryAttributesModePrefixed:
+            case ZLXMLDictionaryAttributesModePrefixed:
             {
                 for (NSString *key in attributeDict)
                 {
-                    node[[XMLDictionaryAttributePrefix stringByAppendingString:key]] = attributeDict[key];
+                    node[[ZLXMLDictionaryAttributePrefix stringByAppendingString:key]] = attributeDict[key];
                 }
                 break;
             }
-            case XMLDictionaryAttributesModeDictionary:
+            case ZLXMLDictionaryAttributesModeDictionary:
             {
-                node[XMLDictionaryAttributesKey] = attributeDict;
+                node[ZLXMLDictionaryAttributesKey] = attributeDict;
                 break;
             }
-            case XMLDictionaryAttributesModeUnprefixed:
+            case ZLXMLDictionaryAttributesModeUnprefixed:
             {
                 [node addEntriesFromDictionary:attributeDict];
                 break;
             }
-            case XMLDictionaryAttributesModeDiscard:
+            case ZLXMLDictionaryAttributesModeDiscard:
             {
                 break;
             }
@@ -376,7 +376,7 @@ static NSString *const XMLDictionaryAttributePrefix = @"_";
                 }
                 else if (!_collapseTextNodes)
                 {
-                    top[XMLDictionaryTextKey] = @"";
+                    top[ZLXMLDictionaryTextKey] = @"";
                 }
             }
         }
@@ -398,11 +398,11 @@ static NSString *const XMLDictionaryAttributePrefix = @"_";
 	if (_preserveComments)
 	{
         NSMutableDictionary<NSString *, id> *top = _stack.lastObject;
-		NSMutableArray<NSString *> *comments = top[XMLDictionaryCommentsKey];
+		NSMutableArray<NSString *> *comments = top[ZLXMLDictionaryCommentsKey];
 		if (!comments)
 		{
 			comments = [@[comment] mutableCopy];
-			top[XMLDictionaryCommentsKey] = comments;
+			top[ZLXMLDictionaryCommentsKey] = comments;
 		}
 		else
 		{
@@ -414,31 +414,31 @@ static NSString *const XMLDictionaryAttributePrefix = @"_";
 @end
 
 
-@implementation NSDictionary(XMLDictionary)
+@implementation NSDictionary(ZLXMLDictionary)
 
 + (NSDictionary<NSString *, id> *)dictionaryWithXMLParser:(NSXMLParser *)parser
 {
-	return [[[XMLDictionaryParser sharedInstance] copy] dictionaryWithParser:parser];
+	return [[[ZLXMLDictionaryParser sharedInstance] copy] dictionaryWithParser:parser];
 }
 
 + (NSDictionary<NSString *, id> *)dictionaryWithXMLData:(NSData *)data
 {
-	return [[[XMLDictionaryParser sharedInstance] copy] dictionaryWithData:data];
+	return [[[ZLXMLDictionaryParser sharedInstance] copy] dictionaryWithData:data];
 }
 
 + (NSDictionary<NSString *, id> *)dictionaryWithXMLString:(NSString *)string
 {
-	return [[[XMLDictionaryParser sharedInstance] copy] dictionaryWithString:string];
+	return [[[ZLXMLDictionaryParser sharedInstance] copy] dictionaryWithString:string];
 }
 
 + (NSDictionary<NSString *, id> *)dictionaryWithXMLFile:(NSString *)path
 {
-	return [[[XMLDictionaryParser sharedInstance] copy] dictionaryWithFile:path];
+	return [[[ZLXMLDictionaryParser sharedInstance] copy] dictionaryWithFile:path];
 }
 
 - (nullable NSDictionary<NSString *, NSString *> *)attributes
 {
-	NSDictionary<NSString *, NSString *> *attributes = self[XMLDictionaryAttributesKey];
+	NSDictionary<NSString *, NSString *> *attributes = self[ZLXMLDictionaryAttributesKey];
 	if (attributes)
 	{
 		return attributes.count? attributes: nil;
@@ -446,13 +446,13 @@ static NSString *const XMLDictionaryAttributePrefix = @"_";
 	else
 	{
 		NSMutableDictionary<NSString *, id> *filteredDict = [NSMutableDictionary dictionaryWithDictionary:self];
-        [filteredDict removeObjectsForKeys:@[XMLDictionaryCommentsKey, XMLDictionaryTextKey, XMLDictionaryNodeNameKey]];
+        [filteredDict removeObjectsForKeys:@[ZLXMLDictionaryCommentsKey, ZLXMLDictionaryTextKey, ZLXMLDictionaryNodeNameKey]];
         for (NSString *key in filteredDict.allKeys)
         {
             [filteredDict removeObjectForKey:key];
-            if ([key hasPrefix:XMLDictionaryAttributePrefix])
+            if ([key hasPrefix:ZLXMLDictionaryAttributePrefix])
             {
-                filteredDict[[key substringFromIndex:XMLDictionaryAttributePrefix.length]] = self[key];
+                filteredDict[[key substringFromIndex:ZLXMLDictionaryAttributePrefix.length]] = self[key];
             }
         }
         return filteredDict.count? filteredDict: nil;
@@ -463,10 +463,10 @@ static NSString *const XMLDictionaryAttributePrefix = @"_";
 - (nullable NSDictionary *)childNodes
 {	
 	NSMutableDictionary *filteredDict = [self mutableCopy];
-	[filteredDict removeObjectsForKeys:@[XMLDictionaryAttributesKey, XMLDictionaryCommentsKey, XMLDictionaryTextKey, XMLDictionaryNodeNameKey]];
+	[filteredDict removeObjectsForKeys:@[ZLXMLDictionaryAttributesKey, ZLXMLDictionaryCommentsKey, ZLXMLDictionaryTextKey, ZLXMLDictionaryNodeNameKey]];
 	for (NSString *key in filteredDict.allKeys)
     {
-        if ([key hasPrefix:XMLDictionaryAttributePrefix])
+        if ([key hasPrefix:ZLXMLDictionaryAttributePrefix])
         {
             [filteredDict removeObjectForKey:key];
         }
@@ -476,17 +476,17 @@ static NSString *const XMLDictionaryAttributePrefix = @"_";
 
 - (nullable NSArray *)comments
 {
-	return self[XMLDictionaryCommentsKey];
+	return self[ZLXMLDictionaryCommentsKey];
 }
 
 - (nullable NSString *)nodeName
 {
-	return self[XMLDictionaryNodeNameKey];
+	return self[ZLXMLDictionaryNodeNameKey];
 }
 
 - (id)innerText
 {	
-	id text = self[XMLDictionaryTextKey];
+	id text = self[ZLXMLDictionaryTextKey];
 	if ([text isKindOfClass:[NSArray class]])
 	{
 		return [text componentsJoinedByString:@"\n"];
@@ -509,7 +509,7 @@ static NSString *const XMLDictionaryAttributePrefix = @"_";
     NSDictionary *childNodes = [self childNodes];
 	for (NSString *key in childNodes)
 	{
-		[nodes addObject:[XMLDictionaryParser XMLStringForNode:childNodes[key] withNodeName:key]];
+		[nodes addObject:[ZLXMLDictionaryParser XMLStringForNode:childNodes[key] withNodeName:key]];
 	}
 	
     NSString *text = [self innerText];
@@ -530,7 +530,7 @@ static NSString *const XMLDictionaryAttributePrefix = @"_";
     }
     else
     {
-        return [XMLDictionaryParser XMLStringForNode:self withNodeName:[self nodeName] ?: @"root"];
+        return [ZLXMLDictionaryParser XMLStringForNode:self withNodeName:[self nodeName] ?: @"root"];
     }
 }
 
@@ -567,7 +567,7 @@ static NSString *const XMLDictionaryAttributePrefix = @"_";
     }
     if ([value isKindOfClass:[NSString class]])
     {
-        return @{XMLDictionaryTextKey: value};
+        return @{ZLXMLDictionaryTextKey: value};
     }
     return value;
 }

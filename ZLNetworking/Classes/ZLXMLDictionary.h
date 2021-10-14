@@ -1,14 +1,14 @@
 //
-//  XMLDictionary.h
+//  ZLXMLDictionary.h
 //
 //  Version 1.4.1
 //
 //  Created by Nick Lockwood on 15/11/2010.
 //  Copyright 2010 Charcoal Design. All rights reserved.
 //
-//  Get the latest version of XMLDictionary from here:
+//  Get the latest version of ZLXMLDictionary from here:
 //
-//  https://github.com/nicklockwood/XMLDictionary
+//  https://github.com/nicklockwood/ZLXMLDictionary
 //
 //  This software is provided 'as-is', without any express or implied
 //  warranty.  In no event will the authors be held liable for any damages
@@ -37,26 +37,26 @@
 NS_ASSUME_NONNULL_BEGIN
 
 
-typedef NS_ENUM(NSInteger, XMLDictionaryAttributesMode)
+typedef NS_ENUM(NSInteger, ZLXMLDictionaryAttributesMode)
 {
-    XMLDictionaryAttributesModePrefixed = 0, //default
-    XMLDictionaryAttributesModeDictionary,
-    XMLDictionaryAttributesModeUnprefixed,
-    XMLDictionaryAttributesModeDiscard
+    ZLXMLDictionaryAttributesModePrefixed = 0, //default
+    ZLXMLDictionaryAttributesModeDictionary,
+    ZLXMLDictionaryAttributesModeUnprefixed,
+    ZLXMLDictionaryAttributesModeDiscard
 };
 
 
-typedef NS_ENUM(NSInteger, XMLDictionaryNodeNameMode)
+typedef NS_ENUM(NSInteger, ZLXMLDictionaryNodeNameMode)
 {
-    XMLDictionaryNodeNameModeRootOnly = 0, //default
-    XMLDictionaryNodeNameModeAlways,
-    XMLDictionaryNodeNameModeNever
+    ZLXMLDictionaryNodeNameModeRootOnly = 0, //default
+    ZLXMLDictionaryNodeNameModeAlways,
+    ZLXMLDictionaryNodeNameModeNever
 };
 
 
-@interface XMLDictionaryParser : NSObject <NSCopying>
+@interface ZLXMLDictionaryParser : NSObject <NSCopying>
 
-+ (XMLDictionaryParser *)sharedInstance;
++ (ZLXMLDictionaryParser *)sharedInstance;
 
 @property (nonatomic, assign) BOOL collapseTextNodes; // defaults to YES
 @property (nonatomic, assign) BOOL stripEmptyNodes;   // defaults to YES
@@ -65,8 +65,8 @@ typedef NS_ENUM(NSInteger, XMLDictionaryNodeNameMode)
 @property (nonatomic, assign) BOOL preserveComments;  // defaults to NO
 @property (nonatomic, assign) BOOL wrapRootNode;      // defaults to NO
 
-@property (nonatomic, assign) XMLDictionaryAttributesMode attributesMode;
-@property (nonatomic, assign) XMLDictionaryNodeNameMode nodeNameMode;
+@property (nonatomic, assign) ZLXMLDictionaryAttributesMode attributesMode;
+@property (nonatomic, assign) ZLXMLDictionaryNodeNameMode nodeNameMode;
 
 - (nullable NSDictionary<NSString *, id> *)dictionaryWithParser:(NSXMLParser *)parser;
 - (nullable NSDictionary<NSString *, id> *)dictionaryWithData:(NSData *)data;
@@ -76,7 +76,7 @@ typedef NS_ENUM(NSInteger, XMLDictionaryNodeNameMode)
 @end
 
 
-@interface NSDictionary (XMLDictionary)
+@interface NSDictionary (ZLXMLDictionary)
 
 + (nullable NSDictionary<NSString *, id> *)dictionaryWithXMLParser:(NSXMLParser *)parser;
 + (nullable NSDictionary<NSString *, id> *)dictionaryWithXMLData:(NSData *)data;
