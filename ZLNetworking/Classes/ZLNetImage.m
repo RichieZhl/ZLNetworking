@@ -447,7 +447,7 @@ static inline CGImageRef CGImageCreateDecoded(CGImageRef cgImage, CGImagePropert
 
 @end
 
-@interface RCTDisplayWeakRefreshable : NSObject
+@interface ZLDisplayWeakRefreshable : NSObject
 
 @property (nonatomic, weak) id<ZLDisplayRefreshable> refreshable;
 
@@ -455,10 +455,10 @@ static inline CGImageRef CGImageCreateDecoded(CGImageRef cgImage, CGImagePropert
 
 @end
 
-@implementation RCTDisplayWeakRefreshable
+@implementation ZLDisplayWeakRefreshable
 
 + (CADisplayLink *)displayLinkWithWeakRefreshable:(id<ZLDisplayRefreshable>)refreshable {
-  RCTDisplayWeakRefreshable *target = [[RCTDisplayWeakRefreshable alloc] initWithRefreshable:refreshable];
+  ZLDisplayWeakRefreshable *target = [[ZLDisplayWeakRefreshable alloc] initWithRefreshable:refreshable];
   return [CADisplayLink displayLinkWithTarget:target selector:@selector(displayDidRefresh:)];
 }
 
@@ -592,7 +592,7 @@ static inline CGImageRef CGImageCreateDecoded(CGImageRef cgImage, CGImagePropert
     }
 
     if (!_displayLink) {
-        _displayLink = [RCTDisplayWeakRefreshable displayLinkWithWeakRefreshable:self];
+        _displayLink = [ZLDisplayWeakRefreshable displayLinkWithWeakRefreshable:self];
         NSString *runLoopMode = [NSProcessInfo processInfo].activeProcessorCount > 1 ? NSRunLoopCommonModes : NSDefaultRunLoopMode;
         [_displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:runLoopMode];
     }
