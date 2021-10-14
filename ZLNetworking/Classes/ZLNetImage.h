@@ -41,6 +41,17 @@ extern ZLImageFormat zl_imageFormatFromUTType(CFStringRef _Nullable uttype);
 
 extern BOOL ZLImageHasAlpha(CGImageRef _Nullable image);
 
+@interface ZLImageCacheManager : NSObject
+
+@property (nonatomic, copy, readonly) NSString * _Nonnull workspacePath;
+
+/// 缓存的最大值 默认 设备物理内存的1/4
+@property (nonatomic, assign) NSUInteger maxMemoryCacheBytes;
+
++ (instancetype _Nonnull)shared;
+
+@end
+
 @protocol ZLAnimatedImage <NSObject>
 @property (nonatomic, assign, readonly) NSUInteger animatedImageFrameCount;
 @property (nonatomic, assign, readonly) NSUInteger animatedImageLoopCount;
@@ -58,19 +69,52 @@ extern BOOL ZLImageHasAlpha(CGImageRef _Nullable image);
 
 @end
 
+typedef NS_ENUM(NSInteger, ZLNetImageViewContentMode) {
+    ZLNetImageViewContentModeScaleAspectFill,
+    ZLNetImageViewContentModeScaleAspectFit,
+    ZLNetImageViewContentModeCenter
+};
+
 @interface UIImage (ZLNet)
 
 + (UIImage *_Nullable)zl_imageWithData:(NSData *_Nullable)data;
 
++ (UIImage *_Nullable)zl_imageWithData:(NSData *_Nullable)data
+                            targetSize:(CGSize)targetSize
+                                radius:(CGFloat)radius
+                           contentMode:(ZLNetImageViewContentMode)contentMode;
+
 + (UIImage *_Nullable)zl_imageWithContentsOfFile:(NSString *_Nullable)path;
+
++ (UIImage *_Nullable)zl_imageWithContentsOfFile:(NSString *_Nullable)path
+                                      targetSize:(CGSize)targetSize
+                                          radius:(CGFloat)radius
+                                     contentMode:(ZLNetImageViewContentMode)contentMode;
 
 + (ZLAnimatedImage *_Nullable)zl_animatedImageWithData:(NSData *_Nullable)data scale:(CGFloat)scale;
 
++ (ZLAnimatedImage *_Nullable)zl_animatedImageWithData:(NSData *_Nullable)data;
+
++ (ZLAnimatedImage *_Nullable)zl_animatedImageWithDataWithContentsOfFile:(NSString *_Nullable)path;
+
 - (NSData *_Nullable)zl_imageDataWithQuality:(float)quality;
+
+- (UIImage *_Nullable)imageScaleForSize:(CGSize)targetSize
+                       withCornerRadius:(CGFloat)radius
+                            contentMode:(ZLNetImageViewContentMode)contentMode;
 
 @end
 
 @interface UIImageView (ZLNet)
+
+/// set render size to change cache image size
+@property (nonatomic, assign) CGSize renderSize;
+
+/// set render cornerRadius to change cache image cornerRadius
+@property (nonatomic, assign) CGFloat renderCornerRadius;
+
+/// set render contentMode to change cache image contentMode
+@property (nonatomic, assign) ZLNetImageViewContentMode renderContentMode;
 
 /**
  * Set the imageView `image` with an `url`, placeholder, custom options and context.

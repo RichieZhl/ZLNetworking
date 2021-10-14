@@ -473,6 +473,8 @@ didCompleteWithError:(nullable NSError *)error {
 
 @property (nonatomic, strong) NSOperationQueue *responseQueue;
 
+@property (nonatomic, strong) NSOperationQueue *downloadQueue;
+
 @property (nonatomic, strong) NSMutableDictionary<NSURL *, ZLDownloadOperation *> *downloadItems;
 
 @property (nonatomic, copy, readwrite) NSString *workspaceDirURLString;
@@ -496,7 +498,9 @@ didCompleteWithError:(nullable NSError *)error {
         _timeoutIntervalForRequest = 10;
         _urlSessionCaches = [NSMutableDictionary dictionary];
         _responseQueue = [[NSOperationQueue alloc] init];
-        _responseQueue.maxConcurrentOperationCount = countOfCores() * 2;
+        _responseQueue.maxConcurrentOperationCount = countOfCores();
+        _downloadQueue = [[NSOperationQueue alloc] init];
+        _downloadQueue.maxConcurrentOperationCount = _responseQueue.maxConcurrentOperationCount;
         _reachablity = [ZLReachability reachabilityWithHostName:@"www.apple.com"];
         _workspaceDirURLString = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject stringByAppendingPathComponent:@"ZHLNetworking"];
         
@@ -916,7 +920,7 @@ responseBodyType:(ZLResponseBodyType)responseBodyType
     operation.destinationURL = destinationURL;
     operation.downloadProgressBlock = downloadProgressBlock;
     operation.completionHandler = completionHandler;
-    [self.responseQueue addOperation:operation];
+    [self.downloadQueue addOperation:operation];
 }
 
 - (void)clearDiskCache {

@@ -824,13 +824,58 @@ static void *ZLNetworkingImageISDecodedAssociatedKey = &ZLNetworkingImageISDecod
 }
 
 + (UIImage *)zl_imageWithData:(NSData *)data {
+    if (data == nil) {
+        return nil;
+    }
     UIImage *image = [UIImage imageWithData:data];
+    if (image == nil) {
+        return nil;
+    }
+    ZLImageFormat imgFormat = zl_imageFormatForImageData(data);
+    if (imgFormat == ZLImageFormatGIF) {
+        return [[ZLAnimatedImage alloc] initWithData:data scale:[UIScreen mainScreen].scale];;
+    } else if (imgFormat == ZLImageFormatPDF || imgFormat == ZLImageFormatSVG) {
+        return image;
+    }
     
     CGImageRef imageRef = CGImageCreateDecoded(image.CGImage, kCGImagePropertyOrientationUp);
     if (!imageRef) {
         return image;
     }
-    UIImage *decodedImage = [[UIImage alloc] initWithCGImage:imageRef scale:image.scale orientation:image.imageOrientation];
+    UIImage *decodedImage = [[UIImage alloc] initWithCGImage:imageRef scale:[UIScreen mainScreen].scale orientation:image.imageOrientation];
+
+    CGImageRelease(imageRef);
+
+    return decodedImage;
+}
+
++ (UIImage *_Nullable)zl_imageWithData:(NSData *_Nullable)data
+                            targetSize:(CGSize)targetSize
+                                radius:(CGFloat)radius
+                           contentMode:(ZLNetImageViewContentMode)contentMode {
+    if (data == nil) {
+        return nil;
+    }
+    UIImage *image = [UIImage imageWithData:data];
+    if (image == nil) {
+        return nil;
+    }
+    image = [image imageScaleForSize:targetSize withCornerRadius:radius contentMode:contentMode];
+    if (image == nil) {
+        return nil;
+    }
+    ZLImageFormat imgFormat = zl_imageFormatForImageData(data);
+    if (imgFormat == ZLImageFormatGIF) {
+        return [[ZLAnimatedImage alloc] initWithData:data scale:[UIScreen mainScreen].scale];;
+    } else if (imgFormat == ZLImageFormatPDF || imgFormat == ZLImageFormatSVG) {
+        return image;
+    }
+    
+    CGImageRef imageRef = CGImageCreateDecoded(image.CGImage, kCGImagePropertyOrientationUp);
+    if (!imageRef) {
+        return image;
+    }
+    UIImage *decodedImage = [[UIImage alloc] initWithCGImage:imageRef scale:[UIScreen mainScreen].scale orientation:image.imageOrientation];
 
     CGImageRelease(imageRef);
 
@@ -846,29 +891,272 @@ static void *ZLNetworkingImageISDecodedAssociatedKey = &ZLNetworkingImageISDecod
     return [UIImage zl_imageWithData:data];
 }
 
++ (UIImage *_Nullable)zl_imageWithContentsOfFile:(NSString *_Nullable)path
+                                      targetSize:(CGSize)targetSize
+                                          radius:(CGFloat)radius
+                                     contentMode:(ZLNetImageViewContentMode)contentMode {
+    NSData *data = [NSData dataWithContentsOfFile:path];
+    if (data == nil) {
+        return nil;
+    }
+    
+    return [UIImage zl_imageWithData:data targetSize:targetSize radius:radius contentMode:contentMode];
+}
+
 + (ZLAnimatedImage *_Nullable)zl_animatedImageWithData:(NSData *_Nullable)data scale:(CGFloat)scale {
     return [[ZLAnimatedImage alloc] initWithData:data scale:scale];
 }
 
++ (ZLAnimatedImage *_Nullable)zl_animatedImageWithData:(NSData *_Nullable)data {
+    return [[ZLAnimatedImage alloc] initWithData:data scale:[UIScreen mainScreen].scale];
+}
+
++ (ZLAnimatedImage *_Nullable)zl_animatedImageWithDataWithContentsOfFile:(NSString *_Nullable)path {
+    NSData *data = [NSData dataWithContentsOfFile:path];
+    if (data == nil) {
+        return nil;
+    }
+    
+    return [[ZLAnimatedImage alloc] initWithData:data scale:[UIScreen mainScreen].scale];
+}
+
+- (UIImage *_Nullable)imageScaleForSize:(CGSize)targetSize
+                       withCornerRadius:(CGFloat)radius
+                            contentMode:(ZLNetImageViewContentMode)contentMode {
+    if (CGSizeEqualToSize(targetSize, CGSizeZero) || CGSizeEqualToSize(targetSize, self.size)) {
+        if (radius <= 0) {
+            return self;
+        }
+        
+        CGRect finalRect = (CGRect){.origin=CGPointZero, .size=self.size};
+        UIGraphicsBeginImageContextWithOptions(self.size, NO, [UIScreen mainScreen].scale);
+        // 根据矩形画带圆角的曲线
+        [[UIBezierPath bezierPathWithRoundedRect:finalRect cornerRadius:radius] addClip];
+
+        [self drawInRect:finalRect];
+        // 图片缩放，是非线程安全的
+        UIImage * image = UIGraphicsGetImageFromCurrentImageContext();
+        // 关闭上下文
+        UIGraphicsEndImageContext();
+        return image;
+    }
+    
+    CGFloat finalWidth = 0, finalHeight = 0;
+    if (contentMode == ZLNetImageViewContentModeScaleAspectFill) {
+        double factor = fmax(targetSize.width / self.size.width, targetSize.height / self.size.height);
+        finalWidth = self.size.width * factor;
+        finalHeight = self.size.height * factor;
+    } else if (contentMode == ZLNetImageViewContentModeScaleAspectFit) {
+        double factor = fmin(targetSize.width / self.size.width, targetSize.height / self.size.height);
+        finalWidth = self.size.width * factor;
+        finalHeight = self.size.height * factor;
+    } else if (contentMode == ZLNetImageViewContentModeCenter) {
+        double factor = 1.0 / [UIScreen mainScreen].scale;
+        finalWidth = self.size.width * factor;
+        finalHeight = self.size.height * factor;
+    }
+    
+    CGRect finalRect = CGRectMake((targetSize.width - finalWidth) * 0.5, (targetSize.height - finalHeight) * 0.5, finalWidth, finalHeight);
+
+    UIGraphicsBeginImageContextWithOptions(targetSize, NO, [UIScreen mainScreen].scale);
+    if (radius > 0) {
+        // 根据矩形画带圆角的曲线
+        [[UIBezierPath bezierPathWithRoundedRect:(CGRect){.origin=CGPointZero, .size=targetSize} cornerRadius:radius] addClip];
+    }
+    [self drawInRect:finalRect];
+    // 图片缩放，是非线程安全的
+    UIImage * image = UIGraphicsGetImageFromCurrentImageContext();
+    // 关闭上下文
+    UIGraphicsEndImageContext();
+    return image;
+}
+
 @end
 
-@interface ZLImageCacheManager : NSObject
+@interface ZLImageMemoryCacheNode : NSObject
 
-@property (nonatomic, copy) NSString *workspacePath;
+@property (nonatomic, strong) UIImage *image;
+
+@property (nonatomic, copy) NSString *identifier;
+
+@property (nonatomic, assign) NSInteger memoryCost;
+
+@property (nonatomic, assign) NSTimeInterval timestamp;
+
+@property (nonatomic, strong) ZLImageMemoryCacheNode *prev;
+
+@property (nonatomic, strong) ZLImageMemoryCacheNode *next;
+
+@end
+
+@implementation ZLImageMemoryCacheNode
+
+- (instancetype)initWithImage:(UIImage *)image identifier:(NSString *)identifier {
+    if (self = [super init]) {
+        self.image = image;
+        self.identifier = identifier;
+        self.timestamp = [NSDate date].timeIntervalSince1970;
+        _memoryCost = -1;
+    }
+    return self;
+}
+
+- (NSInteger)memoryCost {
+    if (_memoryCost == -1) {
+        _memoryCost = [[self class] memoryCacheCostForImage:self.image];
+    }
+    return _memoryCost;
+}
+
++ (NSUInteger)memoryCacheCostForImage:(UIImage *)image {
+    CGImageRef imageRef = image.CGImage;
+    if (!imageRef) {
+        return 0;
+    }
+    NSUInteger bytesPerFrame = CGImageGetBytesPerRow(imageRef) * CGImageGetHeight(imageRef);
+    NSUInteger frameCount = image.images.count > 0 ? image.images.count : 1;
+
+    NSUInteger cost = bytesPerFrame * frameCount;
+    return cost;
+}
+
+@end
+
+@interface ZLImageCacheManager ()
+
+@property (nonatomic, copy, readwrite) NSString *workspacePath;
 
 @property (nonatomic, strong) dispatch_queue_t workQueue;
+@property (nonatomic, strong) dispatch_queue_t serialQueue;
 
-+ (instancetype)shared;
+@property (nonatomic, strong) ZLImageMemoryCacheNode *header;
+@property (nonatomic, strong) ZLImageMemoryCacheNode *footer;
+@property (nonatomic, assign) NSInteger memoryCachedBytes;
+
+@property (nonatomic, strong) NSMutableSet<NSString *> *cacheIdentifiers;
 
 - (void)getCacheWithURL:(NSURL *)url
-       placeholderImage:(UIImage *)placeholder
-        showPlaceholder:(void (^)(UIImage *placeholderImage))showPlaceholderBlock
+             targetSize:(CGSize)targetSize
+                 radius:(CGFloat)radius
+            contentMode:(ZLNetImageViewContentMode)contentMode
                progress:(void (^)(float progress))progressBlock
               completed:(void (^)(UIImage * _Nullable image, NSError * _Nullable error))completedBlock;
 
 @end
 
 @implementation ZLImageCacheManager
+
+- (void)addCacheImage:(UIImage *)image identifier:(NSString *)identifier {
+    dispatch_sync(self.serialQueue, ^{
+        if ([self.cacheIdentifiers containsObject:identifier]) {
+            return;
+        }
+        [self.cacheIdentifiers addObject:identifier];
+        
+        ZLImageMemoryCacheNode *node = [[ZLImageMemoryCacheNode alloc] initWithImage:image identifier:identifier];
+        
+        if (self.header == nil) {
+            if (node.memoryCost >= self.maxMemoryCacheBytes) {
+                return;
+            }
+            
+            self.header = node;
+            self.footer = node;
+            self.memoryCachedBytes = node.memoryCost;
+        } else {
+            if (node.memoryCost >= self.maxMemoryCacheBytes) {
+                return;
+            }
+            
+            NSInteger preMemoryCachedBytes = self.memoryCachedBytes + node.memoryCost;
+            if (preMemoryCachedBytes >= self.maxMemoryCacheBytes) {
+                ZLImageMemoryCacheNode *lastNode = self.footer;
+                preMemoryCachedBytes -= lastNode.memoryCost;
+                while (preMemoryCachedBytes >= self.maxMemoryCacheBytes) {
+                    [self.cacheIdentifiers removeObject:lastNode.identifier];
+                    lastNode = lastNode.prev;
+                    lastNode.next.prev = nil;
+                    lastNode.next = nil;
+                    preMemoryCachedBytes -= lastNode.memoryCost;
+                }
+                self.footer = lastNode;
+            }
+            
+            self.footer.next = node;
+            node.prev = self.footer;
+            self.footer = node;
+            
+            self.memoryCachedBytes = preMemoryCachedBytes;
+        }
+    });
+}
+
+- (void)updateCacheNode:(ZLImageMemoryCacheNode *)node {
+    dispatch_sync(self.serialQueue, ^{
+        node.timestamp = [NSDate date].timeIntervalSince1970;
+        if (node == self.header) {
+            return;
+        } else if (node == self.footer) {
+            node.prev.next = nil;
+            self.footer = node.prev;
+            
+            self.header.prev = node;
+            node.next = self.header;
+            node.prev = nil;
+            self.header = node;
+            return;
+        }
+
+        node.prev.next = node.next;
+        node.next.prev = node.prev;
+
+        self.header.prev = node;
+        node.next = self.header;
+        node.prev = nil;
+        self.header = node;
+    });
+}
+
+- (ZLImageMemoryCacheNode *)findMemoryCacheByIdentifier:(NSString *)identifier {
+    __block ZLImageMemoryCacheNode *resultNode = nil;
+    dispatch_sync(self.serialQueue, ^{
+        ZLImageMemoryCacheNode *headerNode = self.header;
+        ZLImageMemoryCacheNode *footerNode = self.footer;
+        
+        while (headerNode != footerNode) {
+            if ([headerNode.identifier isEqualToString:identifier]) {
+                resultNode = headerNode;
+            }
+            
+            if ([footerNode.identifier isEqualToString:identifier]) {
+                resultNode = footerNode;
+            }
+            
+            headerNode = headerNode.next;
+            footerNode = footerNode.prev;
+        }
+        
+        if (resultNode == nil && headerNode && [headerNode.identifier isEqualToString:identifier]) {
+            resultNode = headerNode;
+        }
+    });
+    return resultNode;
+}
+
+- (void)didReceiveMemoryWarning:(NSNotification *)notification {
+    dispatch_sync(self.serialQueue, ^{
+        ZLImageMemoryCacheNode *headerNode = self.header;
+        while (headerNode) {
+            ZLImageMemoryCacheNode *next = headerNode.next;
+            headerNode.next = nil;
+            next.prev = nil;
+            headerNode = next;
+        }
+        self.header = nil;
+        self.footer = nil;
+        [self.cacheIdentifiers removeAllObjects];
+    });
+}
 
 + (instancetype)shared {
     static ZLImageCacheManager *manager = nil;
@@ -892,6 +1180,13 @@ static void *ZLNetworkingImageISDecodedAssociatedKey = &ZLNetworkingImageISDecod
         }
         
         _workQueue = dispatch_queue_create("com.richie.zlnetimage", DISPATCH_QUEUE_CONCURRENT);
+        _serialQueue = dispatch_queue_create("com.richie.zlnetimage.sync", DISPATCH_QUEUE_SERIAL);
+        
+        _maxMemoryCacheBytes = ZLDeviceTotalMemory() / 4;
+        
+        self.cacheIdentifiers = [NSMutableSet set];
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didReceiveMemoryWarning:) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
     }
     return self;
 }
@@ -909,67 +1204,156 @@ static void *ZLNetworkingImageISDecodedAssociatedKey = &ZLNetworkingImageISDecod
 }
 
 - (void)getCacheWithURL:(NSURL *)url
-       placeholderImage:(UIImage *)placeholder
-        showPlaceholder:(void (^)(UIImage *placeholderImage))showPlaceholderBlock
+             targetSize:(CGSize)targetSize
+                 radius:(CGFloat)radius
+            contentMode:(ZLNetImageViewContentMode)contentMode
                progress:(void (^)(float progress))progressBlock
               completed:(void (^)(UIImage * _Nullable image, NSError * _Nullable error))completedBlock {
-    if (placeholder && showPlaceholderBlock) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            showPlaceholderBlock(placeholder);
-        });
-    }
     
     NSString *identifier = [self identifierWithURL:url];
-    
+    NSString *memoryIdentifier = [identifier stringByAppendingFormat:@"_%.2f_%.2f_%.2f", targetSize.width, targetSize.height, radius];
     NSString *destPath = [_workspacePath stringByAppendingPathComponent:identifier];
-    NSURL *desURL = [NSURL fileURLWithPath:destPath];
     
-    void (^downloadBlock)(void) = ^{
-        [[ZLURLSessionManager shared] downloadWithRequest:[NSURLRequest requestWithURL:url] headers:nil destination:desURL progress:progressBlock completionHandler:^(NSURLResponse *response, NSURL *filePath, NSError *error) {
-            if (error) {
-                completedBlock(nil, error);
-                return;
-            }
-            
-            __block UIImage *image = [UIImage zl_imageWithContentsOfFile:destPath];
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+        ZLImageMemoryCacheNode *node = [self findMemoryCacheByIdentifier:memoryIdentifier];
+        if (node != nil) {
+            [self updateCacheNode:node];
             dispatch_async(dispatch_get_main_queue(), ^{
-                completedBlock(image, nil);
+                completedBlock(node.image, nil);
             });
-        }];
-    };
-    
-    if ([self cacheFileExists:destPath]) {
-        dispatch_async(self.workQueue, ^{
-            __block UIImage *image = [UIImage zl_imageWithContentsOfFile:destPath];
-            if (image == nil) {
-                [[NSFileManager defaultManager] removeItemAtURL:desURL error:nil];
+            return;
+        }
+        
+        NSURL *desURL = [NSURL fileURLWithPath:destPath];
+        
+        void (^downloadBlock)(void) = ^{
+            [[ZLURLSessionManager shared] downloadWithRequest:[NSURLRequest requestWithURL:url] headers:nil destination:desURL progress:progressBlock completionHandler:^(NSURLResponse *response, NSURL *filePath, NSError *error) {
+                if (error) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        completedBlock(nil, error);
+                    });
+                    return;
+                }
                 
-                downloadBlock();
-                return;
-            }
-            dispatch_async(dispatch_get_main_queue(), ^{
-                completedBlock(image, nil);
+                __block UIImage *image = [UIImage zl_imageWithContentsOfFile:destPath targetSize:targetSize radius:radius contentMode:contentMode];
+                [self addCacheImage:image identifier:memoryIdentifier];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    completedBlock(image, nil);
+                });
+            }];
+        };
+        
+        if ([self cacheFileExists:destPath]) {
+            dispatch_async(self.workQueue, ^{
+                __block UIImage *image = [UIImage zl_imageWithContentsOfFile:destPath  targetSize:targetSize radius:radius contentMode:contentMode];
+                if (image == nil) {
+                    [[NSFileManager defaultManager] removeItemAtURL:desURL error:nil];
+                    
+                    downloadBlock();
+                    return;
+                }
+                [self addCacheImage:image identifier:memoryIdentifier];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    completedBlock(image, nil);
+                });
             });
-        });
-        return;
+            return;
+        }
+        
+        downloadBlock();
+    });
+}
+
+@end
+
+static void *ZLNetImageViewConfigAKey = &ZLNetImageViewConfigAKey;
+
+@interface ZLNetImageViewConfig : NSObject
+
+@property (nonatomic, assign) CGSize renderSize;
+
+@property (nonatomic, assign) CGFloat renderCornerRadius;
+
+@property (nonatomic, assign) ZLNetImageViewContentMode renderContentMode;
+
+@end
+
+@implementation ZLNetImageViewConfig
+
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        _renderSize = CGSizeZero;
+        _renderCornerRadius = 0;
+        _renderContentMode = ZLNetImageViewContentModeScaleAspectFill;
     }
-    
-    downloadBlock();
+    return self;
 }
 
 @end
 
 @implementation UIImageView (ZLNet)
 
+- (ZLNetImageViewConfig *)getZLRenderConfig {
+    ZLNetImageViewConfig *value = objc_getAssociatedObject(self, ZLNetImageViewConfigAKey);
+    if (value == nil) {
+        value = [ZLNetImageViewConfig new];
+        objc_setAssociatedObject(self, ZLNetImageViewConfigAKey, value, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    
+    return value;
+}
+
+- (void)setRenderSize:(CGSize)renderSize {
+    ZLNetImageViewConfig *config = [self getZLRenderConfig];
+    config.renderSize = renderSize;
+}
+
+- (CGSize)renderSize {
+    ZLNetImageViewConfig *config = [self getZLRenderConfig];
+    return config.renderSize;
+}
+
+- (void)setRenderCornerRadius:(CGFloat)renderCornerRadius {
+    ZLNetImageViewConfig *config = [self getZLRenderConfig];
+    config.renderCornerRadius = renderCornerRadius;
+}
+
+- (CGFloat)renderCornerRadius {
+    ZLNetImageViewConfig *config = [self getZLRenderConfig];
+    return config.renderCornerRadius;
+}
+
+- (void)setRenderContentMode:(ZLNetImageViewContentMode)renderContentMode {
+    ZLNetImageViewConfig *config = [self getZLRenderConfig];
+    config.renderContentMode = renderContentMode;
+}
+
+- (ZLNetImageViewContentMode)renderContentMode {
+    ZLNetImageViewConfig *config = [self getZLRenderConfig];
+    return config.renderContentMode;
+}
+
 - (void)zl_setImageWithURL:(nullable NSURL *)url
           placeholderImage:(nullable UIImage *)placeholder
                   progress:(nullable void (^)(float progress))progressBlock
 completed:(nullable void (^)(UIImage * _Nullable image, NSError * _Nullable error))completedBlock {
-    [[ZLImageCacheManager shared] getCacheWithURL:url placeholderImage:placeholder showPlaceholder:^(UIImage *placeholderImage) {
-        self.image = placeholderImage;
-    } progress:progressBlock completed:^(UIImage * _Nullable image, NSError * _Nullable error) {
+    if ([NSThread isMainThread]) {
+        self.image = placeholder ?: [UIImage new];
+    } else {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.image = placeholder ?: [UIImage new];
+        });
+    }
+    
+    [[ZLImageCacheManager shared] getCacheWithURL:url
+                                       targetSize:self.renderSize
+                                           radius:self.renderCornerRadius
+                                      contentMode:self.renderContentMode
+                                         progress:progressBlock
+                                        completed:^(UIImage * _Nullable image, NSError * _Nullable error) {
         if (image != nil) {
-            self.image = image;
+            [self setImage:image];
         }
         if (completedBlock) {
             completedBlock(image, error);

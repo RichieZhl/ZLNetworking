@@ -12,6 +12,7 @@
 		4388382127152894001EAFD2 /* p_template_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 4388382027152893001EAFD2 /* p_template_icon.png */; };
 		43883828271576E1001EAFD2 /* locate.png in Resources */ = {isa = PBXBuildFile; fileRef = 43883827271576E1001EAFD2 /* locate.png */; };
 		4388382A27157980001EAFD2 /* sohucs.gif in Resources */ = {isa = PBXBuildFile; fileRef = 4388382927157980001EAFD2 /* sohucs.gif */; };
+		43C08BD02716E3B900647C68 /* ZLImageTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 43C08BCF2716E3B900647C68 /* ZLImageTableViewCell.m */; };
 		6003F58E195388D20070C39A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F58D195388D20070C39A /* Foundation.framework */; };
 		6003F590195388D20070C39A /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F58F195388D20070C39A /* CoreGraphics.framework */; };
 		6003F592195388D20070C39A /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F591195388D20070C39A /* UIKit.framework */; };
@@ -48,6 +49,8 @@
 		4388382027152893001EAFD2 /* p_template_icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = p_template_icon.png; sourceTree = "<group>"; };
 		43883827271576E1001EAFD2 /* locate.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = locate.png; sourceTree = "<group>"; };
 		4388382927157980001EAFD2 /* sohucs.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = sohucs.gif; sourceTree = "<group>"; };
+		43C08BCE2716E3B900647C68 /* ZLImageTableViewCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ZLImageTableViewCell.h; sourceTree = "<group>"; };
+		43C08BCF2716E3B900647C68 /* ZLImageTableViewCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ZLImageTableViewCell.m; sourceTree = "<group>"; };
 		6003F58A195388D20070C39A /* ZLNetworking_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ZLNetworking_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6003F58D195388D20070C39A /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		6003F58F195388D20070C39A /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -154,6 +157,8 @@
 				6003F59C195388D20070C39A /* ZLAppDelegate.h */,
 				6003F59D195388D20070C39A /* ZLAppDelegate.m */,
 				873B8AEA1B1F5CCA007FD442 /* Main.storyboard */,
+				43C08BCE2716E3B900647C68 /* ZLImageTableViewCell.h */,
+				43C08BCF2716E3B900647C68 /* ZLImageTableViewCell.m */,
 				6003F5A5195388D20070C39A /* ZLViewController.h */,
 				6003F5A6195388D20070C39A /* ZLViewController.m */,
 				4388382027152893001EAFD2 /* p_template_icon.png */,
@@ -381,6 +386,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6003F59E195388D20070C39A /* ZLAppDelegate.m in Sources */,
+				43C08BD02716E3B900647C68 /* ZLImageTableViewCell.m in Sources */,
 				6003F5A7195388D20070C39A /* ZLViewController.m in Sources */,
 				6003F59A195388D20070C39A /* main.m in Sources */,
 			);
