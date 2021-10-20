@@ -292,9 +292,18 @@ static id ZLParseResponseBody(ZLResponseBodyType type, NSData *data) {
 
 @property (nonatomic, copy) void (^completionHandler)(NSURLResponse *response, NSURL *filePath, NSError *error);
 
+@property (nonatomic, strong) NSMutableArray<void (^)(NSURLResponse *response, NSURL *filePath, NSError *error)> *otherCompletionHandlers;
+
 @end
 
 @implementation ZLDownloadOperation
+
+- (NSMutableArray<void (^)(NSURLResponse *, NSURL *, NSError *)> *)otherCompletionHandlers {
+    if (_otherCompletionHandlers == nil) {
+        _otherCompletionHandlers = [NSMutableArray array];
+    }
+    return _otherCompletionHandlers;
+}
 
 - (BOOL)isCancelled {
     return _isCancelled;
@@ -433,6 +442,9 @@ didCompleteWithError:(nullable NSError *)error {
         if (self.completionHandler) {
             self.completionHandler(self.response, self.destinationURL, error);
         }
+        for (void (^completionHandler)(NSURLResponse *response, NSURL *filePath, NSError *error) in self.otherCompletionHandlers) {
+            completionHandler(self.response, self.destinationURL, error);
+        }
     } else {
         if (receivedLength >= contentLength) {
             NSError *error = nil;
@@ -441,9 +453,15 @@ didCompleteWithError:(nullable NSError *)error {
             if (self.completionHandler) {
                 self.completionHandler(self.response, self.destinationURL, error);
             }
+            for (void (^completionHandler)(NSURLResponse *response, NSURL *filePath, NSError *error) in self.otherCompletionHandlers) {
+                completionHandler(self.response, self.destinationURL, error);
+            }
         } else {
             if (self.completionHandler) {
                 self.completionHandler(self.response, self.destinationURL, [NSError errorWithDomain:@"FILE IO Error" code:NSURLErrorCannotMoveFile userInfo:nil]);
+            }
+            for (void (^completionHandler)(NSURLResponse *response, NSURL *filePath, NSError *error) in self.otherCompletionHandlers) {
+                completionHandler(self.response, self.destinationURL, [NSError errorWithDomain:@"FILE IO Error" code:NSURLErrorCannotMoveFile userInfo:nil]);
             }
         }
     }
@@ -482,6 +500,13 @@ didCompleteWithError:(nullable NSError *)error {
 @end
 
 @implementation ZLURLSessionManager
+
+- (NSMutableDictionary<NSURL *,ZLDownloadOperation *> *)downloadItems {
+    if (_downloadItems == nil) {
+        _downloadItems = [NSMutableDictionary dictionary];
+    }
+    return _downloadItems;
+}
 
 + (instancetype)shared {
     static ZLURLSessionManager *manager = nil;
@@ -908,12 +933,19 @@ responseBodyType:(ZLResponseBodyType)responseBodyType
                 destination:(NSURL *)destinationURL
                    progress:(void (^)(float downloadProgress))downloadProgressBlock
           completionHandler:(void (^)(NSURLResponse *response, NSURL *filePath, NSError *error))completionHandler {
-    ZLDownloadOperation *_operation = [self.downloadItems objectForKey:request.URL];
+    NSURL *requestURL = request.URL;
+    if (requestURL == nil) {
+        completionHandler(nil, nil, [NSError errorWithDomain:@"" code:-1 userInfo:nil]);
+        return;
+    }
+    ZLDownloadOperation *_operation = self.downloadItems[requestURL];
     if (_operation != nil) {
+        [_operation.otherCompletionHandlers addObject:completionHandler];
         return;
     }
     
     ZLDownloadOperation *operation = [[ZLDownloadOperation alloc] init];
+    self.downloadItems[requestURL] = operation;
     operation.mainDownloadItems = self.downloadItems;
     operation.urlRequest = request.mutableCopy;
     operation.headers = headers;
