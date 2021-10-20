@@ -299,6 +299,12 @@ static inline CGImageRef CGImageCreateDecoded(CGImageRef cgImage, CGImagePropert
 
 @end
 
+@interface ZLAnimatedImage ()
+
++ (float)frameDurationAtIndex:(NSUInteger)index source:(CGImageSourceRef)source;
+
+@end
+
 @implementation ZLAnimatedImage {
   CGImageSourceRef _imageSource;
   CGFloat _scale;
@@ -346,7 +352,7 @@ static inline CGImageRef CGImageCreateDecoded(CGImageRef cgImage, CGImagePropert
     for (size_t i = 0; i < frameCount; i++) {
         ZLGIFCoderFrame *frame = [[ZLGIFCoderFrame alloc] init];
         frame.index = i;
-        frame.duration = [self frameDurationAtIndex:i source:imageSource];
+        frame.duration = [self.class frameDurationAtIndex:i source:imageSource];
         [frames addObject:frame];
     }
 
@@ -374,9 +380,13 @@ static inline CGImageRef CGImageCreateDecoded(CGImageRef cgImage, CGImagePropert
     return loopCount;
 }
 
-- (float)frameDurationAtIndex:(NSUInteger)index source:(CGImageSourceRef)source {
++ (float)frameDurationAtIndex:(NSUInteger)index source:(CGImageSourceRef)source {
+    NSDictionary *options = @{
+        (__bridge NSString *)kCGImageSourceShouldCacheImmediately : @(YES),
+        (__bridge NSString *)kCGImageSourceShouldCache : @(YES) // Always cache to reduce CPU usage
+    };
     float frameDuration = 0.1f;
-    CFDictionaryRef cfFrameProperties = CGImageSourceCopyPropertiesAtIndex(source, index, nil);
+    CFDictionaryRef cfFrameProperties = CGImageSourceCopyPropertiesAtIndex(source, index, (__bridge CFDictionaryRef)options);
     if (!cfFrameProperties) {
         return frameDuration;
     }
@@ -787,6 +797,171 @@ static CGImagePropertyOrientation CGImagePropertyOrientationFromUIImageOrientati
   }
 }
 
+@interface ZLSDImageFrame : NSObject
+
+@property (nonatomic, strong) UIImage *image;
+
+@property (nonatomic, assign) NSTimeInterval duration;
+
++ (instancetype)frameWithImage:(UIImage *)image duration:(NSTimeInterval)duration;
+
++ (UIImage *)createFrameAtIndex:(NSUInteger)index source:(CGImageSourceRef)source scale:(CGFloat)scale preserveAspectRatio:(BOOL)preserveAspectRatio thumbnailSize:(CGSize)thumbnailSize options:(NSDictionary *)options;
+
++ (UIImage *)animatedImageWithFrames:(NSArray<ZLSDImageFrame *> *)frames;
+
+@end
+
+@implementation ZLSDImageFrame
+
++ (instancetype)frameWithImage:(UIImage *)image duration:(NSTimeInterval)duration {
+    ZLSDImageFrame *frame = [ZLSDImageFrame new];
+    frame.image = image;
+    frame.duration = duration;
+    return frame;
+}
+
+static NSUInteger gcd(NSUInteger a, NSUInteger b) {
+    NSUInteger c;
+    while (a != 0) {
+        c = a;
+        a = b % a;
+        b = c;
+    }
+    return b;
+}
+
+static NSUInteger gcdArray(size_t const count, NSUInteger const * const values) {
+    if (count == 0) {
+        return 0;
+    }
+    NSUInteger result = values[0];
+    for (size_t i = 1; i < count; ++i) {
+        result = gcd(values[i], result);
+    }
+    return result;
+}
+
++ (UIImage *)createFrameAtIndex:(NSUInteger)index source:(CGImageSourceRef)source scale:(CGFloat)scale preserveAspectRatio:(BOOL)preserveAspectRatio thumbnailSize:(CGSize)thumbnailSize options:(NSDictionary *)options {
+    // Some options need to pass to `CGImageSourceCopyPropertiesAtIndex` before `CGImageSourceCreateImageAtIndex`, or ImageIO will ignore them because they parse once :)
+    // Parse the image properties
+    NSDictionary *properties = (__bridge_transfer NSDictionary *)CGImageSourceCopyPropertiesAtIndex(source, index, (__bridge CFDictionaryRef)options);
+    CGImagePropertyOrientation exifOrientation = (CGImagePropertyOrientation)[properties[(__bridge NSString *)kCGImagePropertyOrientation] unsignedIntegerValue];
+    if (!exifOrientation) {
+        exifOrientation = kCGImagePropertyOrientationUp;
+    }
+    
+    CFStringRef uttype = CGImageSourceGetType(source);
+    // Check vector format
+    BOOL isVector = NO;
+    if (zl_imageFormatFromUTType(uttype) == ZLImageFormatPDF) {
+        isVector = YES;
+    }
+
+    NSMutableDictionary *decodingOptions;
+    if (options) {
+        decodingOptions = [NSMutableDictionary dictionaryWithDictionary:options];
+    } else {
+        decodingOptions = [NSMutableDictionary dictionary];
+    }
+    CGImageRef imageRef;
+    if (isVector) {
+        if (thumbnailSize.width == 0 || thumbnailSize.height == 0) {
+            // Provide the default pixel count for vector images, simply just use the screen size
+#if SD_WATCH
+            thumbnailSize = WKInterfaceDevice.currentDevice.screenBounds.size;
+#elif SD_UIKIT
+            thumbnailSize = UIScreen.mainScreen.bounds.size;
+#elif SD_MAC
+            thumbnailSize = NSScreen.mainScreen.frame.size;
+#endif
+        }
+        CGFloat maxPixelSize = MAX(thumbnailSize.width, thumbnailSize.height);
+        NSUInteger DPIPerPixel = 2;
+        NSUInteger rasterizationDPI = maxPixelSize * DPIPerPixel;
+        decodingOptions[@"kSDCGImageSourceRasterizationDPI"] = @(rasterizationDPI);
+    }
+    imageRef = CGImageSourceCreateImageAtIndex(source, index, (__bridge CFDictionaryRef)[decodingOptions copy]);
+    
+    UIImageOrientation imgOrientation = UIImageOrientationUp;
+    switch (exifOrientation) {
+        case kCGImagePropertyOrientationDown:
+            imgOrientation = UIImageOrientationDown;
+            break;
+            
+        case kCGImagePropertyOrientationDownMirrored:
+            imgOrientation = UIImageOrientationDownMirrored;
+            break;
+            
+        case kCGImagePropertyOrientationUpMirrored:
+            imgOrientation = UIImageOrientationUpMirrored;
+            break;
+            
+        case kCGImagePropertyOrientationLeftMirrored:
+            imgOrientation = UIImageOrientationLeftMirrored;
+            break;
+            
+        case kCGImagePropertyOrientationRight:
+            imgOrientation = UIImageOrientationRight;
+            break;
+            
+        case kCGImagePropertyOrientationRightMirrored:
+            imgOrientation = UIImageOrientationRightMirrored;
+            break;
+            
+        case kCGImagePropertyOrientationLeft:
+            imgOrientation = UIImageOrientationLeft;
+            break;
+            
+        default:
+            break;
+    }
+#if SD_UIKIT || SD_WATCH
+    UIImageOrientation imageOrientation = [SDImageCoderHelper imageOrientationFromEXIFOrientation:exifOrientation];
+    UIImage *image = [[UIImage alloc] initWithCGImage:imageRef scale:scale orientation:imageOrientation];
+#else
+    UIImage *image = [[UIImage alloc] initWithCGImage:imageRef scale:scale orientation:imgOrientation];
+#endif
+    CGImageRelease(imageRef);
+    return image;
+}
+
++ (UIImage *)animatedImageWithFrames:(NSArray<ZLSDImageFrame *> *)frames {
+    NSUInteger frameCount = frames.count;
+    if (frameCount == 0) {
+        return nil;
+    }
+    
+    UIImage *animatedImage;
+    
+    NSUInteger durations[frameCount];
+    for (size_t i = 0; i < frameCount; i++) {
+        durations[i] = frames[i].duration * 1000;
+    }
+    NSUInteger const gcd = gcdArray(frameCount, durations);
+    __block NSUInteger totalDuration = 0;
+    NSMutableArray<UIImage *> *animatedImages = [NSMutableArray arrayWithCapacity:frameCount];
+    [frames enumerateObjectsUsingBlock:^(ZLSDImageFrame * _Nonnull frame, NSUInteger idx, BOOL * _Nonnull stop) {
+        UIImage *image = frame.image;
+        NSUInteger duration = frame.duration * 1000;
+        totalDuration += duration;
+        NSUInteger repeatCount;
+        if (gcd) {
+            repeatCount = duration / gcd;
+        } else {
+            repeatCount = 1;
+        }
+        for (size_t i = 0; i < repeatCount; ++i) {
+            [animatedImages addObject:image];
+        }
+    }];
+    
+    animatedImage = [UIImage animatedImageWithImages:animatedImages duration:totalDuration / 1000.f];
+    
+    return animatedImage;
+}
+
+@end
+
 static void *ZLNetworkingImageISDecodedAssociatedKey = &ZLNetworkingImageISDecodedAssociatedKey;
 
 @implementation UIImage (ZLNet)
@@ -918,6 +1093,47 @@ static void *ZLNetworkingImageISDecodedAssociatedKey = &ZLNetworkingImageISDecod
     }
     
     return [[ZLAnimatedImage alloc] initWithData:data scale:[UIScreen mainScreen].scale];
+}
+
++ (UIImage *_Nullable)zl_animatedImageSDWithData:(NSData *_Nullable)data {
+    if (!data) {
+        return nil;
+    }
+    CGFloat scale = 1;
+    
+    CGSize thumbnailSize = CGSizeZero;
+    
+    BOOL preserveAspectRatio = YES;
+    
+    CGImageSourceRef source = CGImageSourceCreateWithData((__bridge CFDataRef)data, NULL);
+    if (!source) {
+        return nil;
+    }
+    size_t count = CGImageSourceGetCount(source);
+    UIImage *animatedImage;
+    
+    if (count <= 1) {
+        animatedImage = [ZLSDImageFrame createFrameAtIndex:0 source:source scale:scale preserveAspectRatio:preserveAspectRatio thumbnailSize:thumbnailSize options:nil];
+    } else {
+        NSMutableArray<ZLSDImageFrame *> *frames = [NSMutableArray array];
+        
+        for (size_t i = 0; i < count; i++) {
+            UIImage *image = [ZLSDImageFrame createFrameAtIndex:i source:source scale:scale preserveAspectRatio:preserveAspectRatio thumbnailSize:thumbnailSize options:nil];
+            if (!image) {
+                continue;
+            }
+            
+            NSTimeInterval duration = [ZLAnimatedImage frameDurationAtIndex:i source:source];
+            
+            ZLSDImageFrame *frame = [ZLSDImageFrame frameWithImage:image duration:duration];
+            [frames addObject:frame];
+        }
+        
+        animatedImage = [ZLSDImageFrame animatedImageWithFrames:frames];
+    }
+    CFRelease(source);
+    
+    return animatedImage;
 }
 
 - (UIImage *_Nullable)imageScaleForSize:(CGSize)targetSize

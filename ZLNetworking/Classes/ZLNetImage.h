@@ -99,6 +99,8 @@ typedef NS_ENUM(NSInteger, ZLNetImageViewContentMode) {
 
 + (ZLAnimatedImage *_Nullable)zl_animatedImageWithDataWithContentsOfFile:(NSString *_Nullable)path;
 
++ (UIImage *_Nullable)zl_animatedImageSDWithData:(NSData *_Nullable)data;
+
 - (NSData *_Nullable)zl_imageDataWithQuality:(float)quality;
 
 - (UIImage *_Nullable)imageScaleForSize:(CGSize)targetSize
