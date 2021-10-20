@@ -47,6 +47,9 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
     
     ZHLReachability* noteObject = (__bridge ZHLReachability *)info;
     // Post a notification to notify the client that the network reachability changed.
+    if (noteObject.statusChangeBlock) {
+        noteObject.statusChangeBlock(noteObject.currentReachabilityStatus);
+    }
     [[NSNotificationCenter defaultCenter] postNotificationName: kReachabilityChangedNotification object: noteObject];
 }
 

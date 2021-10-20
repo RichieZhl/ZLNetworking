@@ -26,6 +26,8 @@ extern NSString *kReachabilityChangedNotification;
 
 @interface ZHLReachability : NSObject
 
+@property (nonatomic, copy) void (^statusChangeBlock)(NetworkStatus status);
+
 /*!
  * Use to check the reachability of a given host name.
  */
