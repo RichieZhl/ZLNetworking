@@ -1264,6 +1264,11 @@ static void *ZLNetworkingImageISDecodedAssociatedKey = &ZLNetworkingImageISDecod
     });
 }
 
+- (void)clearDiskCache {
+    [ZLURLSessionManager deleteDirPath:_workspacePath];
+    [[NSFileManager defaultManager] createDirectoryAtPath:_workspacePath withIntermediateDirectories:YES attributes:nil error:nil];
+}
+
 @end
 
 static void *ZLNetImageViewConfigAKey = &ZLNetImageViewConfigAKey;

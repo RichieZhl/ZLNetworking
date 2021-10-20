@@ -50,6 +50,8 @@ extern BOOL ZLImageHasAlpha(CGImageRef _Nullable image);
 
 + (instancetype _Nonnull)shared;
 
+- (void)clearDiskCache;
+
 @end
 
 @protocol ZLAnimatedImage <NSObject>

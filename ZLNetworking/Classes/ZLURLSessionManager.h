@@ -184,4 +184,6 @@ responseBodyType:(ZLResponseBodyType)responseBodyType
 
 - (void)cancelDownloadForURL:(NSURL *)url;
 
++ (void)deleteDirPath:(NSString *)dirPath;
+
 @end
