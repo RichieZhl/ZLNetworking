@@ -94,12 +94,15 @@ NSString *ZLSha256HashFor(NSString *input) {
 }
 
 static id ZLParseResponseBody(ZLResponseBodyType type, NSData *data) {
+    if (data == nil) {
+        return nil;
+    }
     if (type == ZLResponseBodyTypeJson) {
         NSError *error = nil;
         id result = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableLeaves error:&error];
         if (error) {
             NSLog(@"%@", error);
-            return data;
+            return nil;
         }
         return result;
     } else if (type == ZLResponseBodyTypeXml) {
@@ -108,7 +111,7 @@ static id ZLParseResponseBody(ZLResponseBodyType type, NSData *data) {
             return result;
         }
         
-        return data;
+        return nil;
     }
     
     return data;
@@ -657,7 +660,12 @@ didCompleteWithError:(nullable NSError *)error {
                 return;
             }
             
-            success((NSHTTPURLResponse *)response, ZLParseResponseBody(responseBodyType, data));
+            id res = ZLParseResponseBody(responseBodyType, data);
+            if (res == nil) {
+                failure([NSError errorWithDomain:@"data error" code:-999999 userInfo:nil]);
+                return;
+            }
+            success((NSHTTPURLResponse *)response, res);
         }];
     }];
     [task resume];
@@ -860,7 +868,12 @@ didCompleteWithError:(nullable NSError *)error {
                 return;
             }
             
-            success((NSHTTPURLResponse *)response, ZLParseResponseBody(responseBodyType, data));
+            id res = ZLParseResponseBody(responseBodyType, data);
+            if (res == nil) {
+                failure([NSError errorWithDomain:@"data error" code:-999999 userInfo:nil]);
+                return;
+            }
+            success((NSHTTPURLResponse *)response, res);
         }];
     }];
     [task resume];
@@ -921,7 +934,12 @@ responseBodyType:(ZLResponseBodyType)responseBodyType
                     return;
                 }
                 
-                success((NSHTTPURLResponse *)response, ZLParseResponseBody(responseBodyType, data));
+                id res = ZLParseResponseBody(responseBodyType, data);
+                if (res == nil) {
+                    failure([NSError errorWithDomain:@"data error" code:-999999 userInfo:nil]);
+                    return;
+                }
+                success((NSHTTPURLResponse *)response, res);
             }];
         }];
         [task resume];
