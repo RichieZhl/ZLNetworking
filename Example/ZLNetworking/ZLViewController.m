@@ -10,14 +10,17 @@
 #import <ZLNetworking/ZLURLSessionManager.h>
 #import <ZLNetworking/ZLNetImage.h>
 #import "ZLImageTableViewCell.h"
+#import <ZLNetworking/ZLWebSocket.h>
 
-@interface ZLViewController () <UITableViewDataSource>
+@interface ZLViewController () <UITableViewDataSource, ZLWebSocketDelegate>
 
 @property (nonatomic, weak) IBOutlet UIImageView *imageView;
 
 @property (nonatomic, weak) IBOutlet UITableView *tableView;
 
 @property (nonatomic, strong) NSMutableArray<NSString *> *items;
+
+@property (nonatomic, strong) ZLWebSocket *socket;
 
 @end
 
@@ -34,6 +37,9 @@
 {
     [super viewDidLoad];
 	// Do any additional setup after loading the view, typically from a nib
+    self.socket = [[ZLWebSocket alloc] initWithURL:[self webSocketReConnectURL]];
+    self.socket.delegate = self;
+    [self.socket open];
     
     [[ZLURLSessionManager shared] GET:@"https://aresapi.qianmi.com/api/map" parameters:@{@"pid": @1, @"eid": @2, @"platform": @"android", @"sv": @11, @"gray": @0} headers:nil responseBodyType:ZLResponseBodyTypeJson success:^(NSHTTPURLResponse *urlResponse, id responseObject) {
         NSLog(@"%@", urlResponse);
@@ -119,4 +125,37 @@
     return cell;
 }
 
+#pragma mark - webSocket delegate
+- (NSURL *)webSocketReConnectURL {
+    return [NSURL URLWithString:@"ws://172.19.3.11:8080/ws/OF001?a=bfdf"];
+}
+
+- (void)webSocketDidOpen:(ZLWebSocket *)webSocket {
+    NSLog(@"%s", __FUNCTION__);
+}
+
+- (void)webSocket:(ZLWebSocket *)webSocket didFailWithError:(NSError *)error {
+    NSLog(@"%s", __FUNCTION__);
+}
+
+- (void)webSocket:(ZLWebSocket *)webSocket didCloseWithCode:(NSInteger)code reason:(nullable NSString *)reason wasClean:(BOOL)wasClean {
+    NSLog(@"%s", __FUNCTION__);
+}
+
+- (void)webSocket:(ZLWebSocket *)webSocket didReceivePingWithData:(nullable NSData *)data {
+    NSLog(@"------didReceivePingWithData---------%@", data);
+}
+
+- (void)webSocket:(ZLWebSocket *)webSocket didReceiveMessageWithString:(NSString *)string {
+    NSLog(@"------didReceiveMessageWithString---------%@", string);
+}
+
+- (void)webSocket:(ZLWebSocket *)webSocket didReceiveMessageWithData:(NSData *)data {
+    NSLog(@"------didReceiveMessageWithData---------%@", [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]);
+}
+
+- (void)webSocket:(ZLWebSocket *)webSocket didReceivePong:(nullable NSData *)pongData {
+    NSLog(@"-------didReceivePong--------");
+    [webSocket sendData:[@"tick" dataUsingEncoding:NSUTF8StringEncoding] error:nil];
+}
 @end
