@@ -1566,6 +1566,12 @@ completed:(nullable void (^)(UIImage * _Nullable image, NSError * _Nullable erro
             self.image = placeholder ?: [UIImage new];
         });
     }
+    if (url == nil) {
+        if (completedBlock) {
+            completedBlock(nil, [NSError errorWithDomain:@"ZLNetImageError" code:-999 userInfo:@{NSLocalizedDescriptionKey: @"url must not be nil"}]);
+        }
+        return;
+    }
     
     [[ZLImageCacheManager shared] getCacheWithURL:url
                                        targetSize:self.renderSize
