@@ -340,6 +340,11 @@ static id ZLParseResponseBody(ZLResponseBodyType type, NSData *data) {
     NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
     configuration.HTTPShouldSetCookies = YES;
     configuration.HTTPShouldUsePipelining = NO;
+    if (@available(iOS 16.0, *)) {
+        configuration.requiresDNSSECValidation = YES;
+    } else {
+        // Fallback on earlier versions
+    }
     
     configuration.timeoutIntervalForRequest = 3600;
     configuration.allowsCellularAccess = YES;
